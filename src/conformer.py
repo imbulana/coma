@@ -1,7 +1,7 @@
 # adapted from https://github.com/lucidrains/conformer
 
 import torch
-from torch import nn, einsum
+from torch import nn, einsum, arange, cat
 import torch.nn.functional as F
 
 from einops import rearrange
@@ -15,11 +15,44 @@ def exists(val):
 def default(val, d):
     return val if exists(val) else d
 
+def divisible_by(num, den):
+    return (num % den) == 0
+
 def calc_same_padding(kernel_size):
     pad = kernel_size // 2
     return (pad, pad - (kernel_size + 1) % 2)
 
 # helper classes
+
+class ScaledSinusoidalEmbedding(nn.Module):
+    def __init__(self, dim, theta = 10000):
+        super().__init__()
+        assert divisible_by(dim, 2)
+        self.scale = nn.Parameter(torch.ones(1) * dim ** -0.5)
+
+        half_dim = dim // 2
+        freq_seq = arange(half_dim).float() / half_dim
+        inv_freq = theta ** -freq_seq
+        self.register_buffer('inv_freq', inv_freq, persistent = False)
+
+    def forward(
+        self,
+        x,
+        pos = None,
+        seq_start_pos = None,
+        offset = 0
+    ):
+        seq_len, device = x.shape[1], x.device
+
+        if not exists(pos):
+            pos = arange(seq_len, device = device) + offset
+
+        if exists(seq_start_pos):
+            pos = pos - seq_start_pos[..., None]
+
+        emb = einsum('i, j -> i j', pos, self.inv_freq)
+        emb = cat((emb.sin(), emb.cos()), dim = -1)
+        return emb * self.scale
 
 class Swish(nn.Module):
     def forward(self, x):
