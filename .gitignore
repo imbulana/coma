@@ -1,5 +1,7 @@
 %APPDATA%
 .DS_Store
 
+TODO.md
+
 *.pdf
 datasets/
