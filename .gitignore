@@ -1,0 +1,5 @@
+%APPDATA%
+.DS_Store
+
+*.pdf
+datasets/
