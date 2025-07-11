@@ -1,4 +1,4 @@
-# adapted from https://github.com/lucidrains/conformer
+# adapted from https://github.com/lucidrains/conformer and https://github.com/lucidrains/x-transformers
 
 import torch
 from torch import nn, einsum, arange, cat
@@ -111,12 +111,10 @@ class Attention(nn.Module):
         inner_dim = dim_head * heads
         self.heads= heads
         self.scale = dim_head ** -0.5
+
         self.to_q = nn.Linear(dim, inner_dim, bias = False)
         self.to_kv = nn.Linear(dim, inner_dim * 2, bias = False)
         self.to_out = nn.Linear(inner_dim, dim)
-
-        self.max_pos_emb = max_pos_emb
-        self.rel_pos_emb = nn.Embedding(2 * max_pos_emb + 1, dim_head)
 
         self.dropout = nn.Dropout(dropout)
 
@@ -127,22 +125,15 @@ class Attention(nn.Module):
         mask = None,
         context_mask = None
     ):
-        n, device, h, max_pos_emb, has_context = x.shape[-2], x.device, self.heads, self.max_pos_emb, exists(context)
+        (
+            n, device, h, has_context 
+        ) = x.shape[-2], x.device, self.heads, exists(context)
         context = default(context, x)
 
         q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim = -1))
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = h), (q, k, v))
 
         dots = einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
-
-        # shaw's relative positional embedding
-
-        seq = torch.arange(n, device = device)
-        dist = rearrange(seq, 'i -> i ()') - rearrange(seq, 'j -> () j')
-        dist = dist.clamp(-max_pos_emb, max_pos_emb) + max_pos_emb
-        rel_pos_emb = self.rel_pos_emb(dist).to(q)
-        pos_attn = einsum('b h n d, n r d -> b h n r', q, rel_pos_emb) * self.scale
-        dots = dots + pos_attn
 
         if exists(mask) or exists(context_mask):
             mask = default(mask, lambda: torch.ones(*x.shape[:2], device = device))
@@ -265,6 +256,7 @@ class Conformer(nn.Module):
         super().__init__()
         self.dim = dim
         self.layers = nn.ModuleList([])
+        self.pos_emb = ScaledSinusoidalEmbedding(dim)
 
         for _ in range(depth):
             self.layers.append(ConformerBlock(
@@ -280,7 +272,20 @@ class Conformer(nn.Module):
 
     def forward(self, x):
 
+        x = x + self.pos_emb(x)
         for block in self.layers:
             x = block(x)
 
         return x
+
+if __name__ == "__main__":
+    model = Conformer(
+        dim = 128,
+        depth = 6,
+        dim_head = 64,
+        heads = 8,
+        ff_mult = 4,
+        conv_expansion_factor = 2,
+    )
+    x = torch.randn(1, 100, 128)
+    print(model(x).shape)
