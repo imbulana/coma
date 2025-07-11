@@ -13,5 +13,9 @@ pip install -r requirements.txt
 
 ## Usage
 
+## References
+
+conformer implementation: https://github.com/lucidrains/conformer
+tranformers: https://github.com/lucidrains/x-transformers
 
 ## Citations
