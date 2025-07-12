@@ -1,11 +1,17 @@
-# adapted from https://github.com/lucidrains/conformer and https://github.com/lucidrains/x-transformers
+import math
 
 import torch
 from torch import nn, einsum, arange, cat
 import torch.nn.functional as F
 
-from einops import rearrange
+from einops import rearrange, repeat, pack, unpack
 from einops.layers.torch import Rearrange
+
+from local_attention import LocalAttention
+
+# constant
+
+TOKEN_SELF_ATTN_VALUE = -5e4
 
 # helper functions
 
@@ -98,6 +104,142 @@ class PreNorm(nn.Module):
         x = self.norm(x)
         return self.fn(x, **kwargs)
 
+class LocalMHA(nn.Module):
+    def __init__(
+        self,
+        *,
+        dim,
+        window_size,
+        dim_head = 64,
+        heads = 8,
+        dropout = 0.,
+        causal = False,
+        prenorm = False,
+        qk_rmsnorm = False,
+        qk_scale = 8,
+        use_xpos = False,
+        xpos_scale_base = None,
+        exact_windowsize = None,
+        gate_values_per_head = False,
+        **kwargs
+    ):
+        super().__init__()        
+        inner_dim = dim_head * heads
+
+        self.norm = nn.LayerNorm(dim) if prenorm else None
+
+        self.heads = heads
+        self.to_qkv = nn.Linear(dim, inner_dim * 3, bias = False)
+
+        self.qk_rmsnorm = qk_rmsnorm
+
+        if qk_rmsnorm:
+            self.q_scale = nn.Parameter(torch.ones(dim_head))
+            self.k_scale = nn.Parameter(torch.ones(dim_head))
+
+        self.causal = causal
+        self.window_size = window_size
+        self.exact_windowsize = default(exact_windowsize, True)
+
+        self.attn_fn = LocalAttention(
+            dim = dim_head,
+            window_size = window_size,
+            causal = causal,
+            autopad = True,
+            scale = (qk_scale if qk_rmsnorm else None),
+            exact_windowsize = self.exact_windowsize,
+            use_xpos = use_xpos,
+            xpos_scale_base = xpos_scale_base,
+            **kwargs
+        )
+
+        self.to_v_gate = None
+
+        if gate_values_per_head:
+            self.to_v_gate = nn.Sequential(
+                nn.Linear(dim, heads)
+            )
+
+        self.to_out = nn.Linear(inner_dim, dim, bias = False)
+
+    def forward(
+        self,
+        x,
+        mask = None,
+        attn_bias = None,
+        cache = None,
+        return_cache = False
+    ):
+        seq_len = x.shape[-2]
+
+        if exists(self.norm):
+            x = self.norm(x)
+
+        q, k, v = self.to_qkv(x).chunk(3, dim = -1)
+        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = self.heads), (q, k, v)) 
+
+        if self.qk_rmsnorm:
+            q, k = map(l2norm, (q, k))
+            q = q * self.q_scale
+            k = k * self.k_scale
+
+        if exists(cache):
+            assert seq_len == 1
+
+            assert self.causal and not exists(mask), 'only allow caching for specific configuration'
+
+            ck, cv = cache
+
+            q = q * (q.shape[-1] ** -0.5)
+
+            k = torch.cat((ck, k), dim = -2)
+            v = torch.cat((cv, v), dim = -2)
+
+            effective_window_size = self.attn_fn.look_backward * self.window_size
+
+            if self.exact_windowsize:
+                kv_start_index = -(effective_window_size + 1)
+            else:
+                seq_len = k.shape[-2]
+                kv_start_index = -(effective_window_size + (seq_len % self.window_size))
+
+            k, v = tuple(t[..., kv_start_index:, :] for t in (k, v))
+
+            if exists(self.attn_fn.rel_pos):
+                rel_pos = self.attn_fn.rel_pos
+                pos_emb, xpos_scale = rel_pos(k)
+                q, k = apply_rotary_pos_emb(q, k, pos_emb, scale = xpos_scale)
+
+            sim = einsum(q, k, 'b h i d, b h j d -> b h i j')
+
+            if exists(attn_bias):
+                k_len = k.shape[-2]
+                attn_bias = attn_bias[..., -1:, -k_len:]
+                assert attn_bias.shape[-1] == sim.shape[-1]
+                sim = sim + attn_bias
+
+            attn = sim.softmax(dim = -1)
+            out = einsum(attn, v, 'b h i j, b h j d -> b h i d')
+
+        else:
+            out = self.attn_fn(q, k, v, mask = mask, attn_bias = attn_bias)
+
+        if return_cache:
+            kv = torch.stack((k, v))
+
+        if exists(self.to_v_gate):
+            gates = self.to_v_gate(x)
+            gates = rearrange(gates, 'b n h -> b h n 1')
+            out = out * gates.sigmoid()
+
+        out = rearrange(out, 'b h n d -> b n (h d)')
+        out = self.to_out(out)
+
+        if not return_cache:
+            return out
+
+        return out, kv
+
 class Attention(nn.Module):
     def __init__(
         self,
@@ -125,9 +267,7 @@ class Attention(nn.Module):
         mask = None,
         context_mask = None
     ):
-        (
-            n, device, h, has_context 
-        ) = x.shape[-2], x.device, self.heads, exists(context)
+        n, device, h, has_context = x.shape[-2], x.device, self.heads, exists(context)
         context = default(context, x)
 
         q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim = -1))
@@ -137,7 +277,11 @@ class Attention(nn.Module):
 
         if exists(mask) or exists(context_mask):
             mask = default(mask, lambda: torch.ones(*x.shape[:2], device = device))
-            context_mask = default(context_mask, mask) if not has_context else default(context_mask, lambda: torch.ones(*context.shape[:2], device = device))
+            context_mask = default(
+                context_mask, mask
+            ) if not has_context else default(
+                context_mask, lambda: torch.ones(*context.shape[:2], device = device)
+            )
             mask_value = -torch.finfo(dots.dtype).max
             mask = rearrange(mask, 'b i -> b () i ()') * rearrange(context_mask, 'b j -> b () () j')
             dots.masked_fill_(~mask, mask_value)
@@ -205,6 +349,8 @@ class ConformerBlock(nn.Module):
         self,
         *,
         dim,
+        attn_causal = False,
+        attn_window_sizes = [8, 16, 32],
         dim_head = 64,
         heads = 8,
         ff_mult = 4,
@@ -217,7 +363,9 @@ class ConformerBlock(nn.Module):
     ):
         super().__init__()
         self.ff1 = FeedForward(dim = dim, mult = ff_mult, dropout = ff_dropout)
-        self.attn = Attention(dim = dim, dim_head = dim_head, heads = heads, dropout = attn_dropout)
+        # self.scale_weights = nn.Parameter(torch.ones(len(attn_window_sizes)))
+        # self.attn = Attention(dim = dim, dim_head = dim_head, heads = heads, dropout = attn_dropout)
+        self.attn = LocalMHA(dim = dim, window_size = 8, causal=attn_causal, dropout = attn_dropout)
         self.conv = ConformerConvModule(dim = dim, causal = conv_causal, expansion_factor = conv_expansion_factor, kernel_size = conv_kernel_size, dropout = conv_dropout)
         self.ff2 = FeedForward(dim = dim, mult = ff_mult, dropout = ff_dropout)
 
@@ -272,7 +420,7 @@ class Conformer(nn.Module):
 
     def forward(self, x):
 
-        x = x + self.pos_emb(x)
+        x = self.pos_emb(x) + x
         for block in self.layers:
             x = block(x)
 
