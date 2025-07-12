@@ -104,6 +104,7 @@ class PreNorm(nn.Module):
         x = self.norm(x)
         return self.fn(x, **kwargs)
 
+# NOTE: dropout used?
 class LocalMHA(nn.Module):
     def __init__(
         self,
@@ -240,58 +241,42 @@ class LocalMHA(nn.Module):
 
         return out, kv
 
-class Attention(nn.Module):
+class MultiscaleLocalMHA(nn.Module):
     def __init__(
         self,
+        *,
         dim,
-        heads = 8,
-        dim_head = 64,
-        dropout = 0.,
-        max_pos_emb = 512
+        window_sizes=[8, 16, 32],
+        dim_head=64,
+        heads=8,
+        dropout=0.,
+        causal=False,
+        **kwargs
     ):
         super().__init__()
-        inner_dim = dim_head * heads
-        self.heads= heads
-        self.scale = dim_head ** -0.5
+        self.scales = nn.ModuleList([
+            LocalMHA(
+                dim=dim,
+                window_size=window_size,
+                dim_head=dim_head,
+                heads=heads,
+                dropout=dropout,
+                causal=causal,
+                **kwargs
+            ) for window_size in window_sizes
+        ])
+        self.scale_weights = nn.Parameter(torch.ones(len(window_sizes)) / len(window_sizes))
 
-        self.to_q = nn.Linear(dim, inner_dim, bias = False)
-        self.to_kv = nn.Linear(dim, inner_dim * 2, bias = False)
-        self.to_out = nn.Linear(inner_dim, dim)
+    def forward(self, x, mask=None):
+        outs = []
+        for attn in self.scales:
+            outs.append(attn(x, mask=mask))
 
-        self.dropout = nn.Dropout(dropout)
+        outs = torch.stack(outs, dim=0)
+        weights = torch.softmax(self.scale_weights, dim=0) # NOTE: ca
+        out = einsum('s b n d, s -> b n d', outs, weights)
 
-    def forward(
-        self,
-        x,
-        context = None,
-        mask = None,
-        context_mask = None
-    ):
-        n, device, h, has_context = x.shape[-2], x.device, self.heads, exists(context)
-        context = default(context, x)
-
-        q, k, v = (self.to_q(x), *self.to_kv(context).chunk(2, dim = -1))
-        q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> b h n d', h = h), (q, k, v))
-
-        dots = einsum('b h i d, b h j d -> b h i j', q, k) * self.scale
-
-        if exists(mask) or exists(context_mask):
-            mask = default(mask, lambda: torch.ones(*x.shape[:2], device = device))
-            context_mask = default(
-                context_mask, mask
-            ) if not has_context else default(
-                context_mask, lambda: torch.ones(*context.shape[:2], device = device)
-            )
-            mask_value = -torch.finfo(dots.dtype).max
-            mask = rearrange(mask, 'b i -> b () i ()') * rearrange(context_mask, 'b j -> b () () j')
-            dots.masked_fill_(~mask, mask_value)
-
-        attn = dots.softmax(dim = -1)
-
-        out = einsum('b h i j, b h j d -> b h i d', attn, v)
-        out = rearrange(out, 'b h n d -> b n (h d)')
-        out = self.to_out(out)
-        return self.dropout(out)
+        return out
 
 class FeedForward(nn.Module):
     def __init__(
@@ -363,9 +348,7 @@ class ConformerBlock(nn.Module):
     ):
         super().__init__()
         self.ff1 = FeedForward(dim = dim, mult = ff_mult, dropout = ff_dropout)
-        # self.scale_weights = nn.Parameter(torch.ones(len(attn_window_sizes)))
-        # self.attn = Attention(dim = dim, dim_head = dim_head, heads = heads, dropout = attn_dropout)
-        self.attn = LocalMHA(dim = dim, window_size = 8, causal=attn_causal, dropout = attn_dropout)
+        self.attn = MultiscaleLocalMHA(dim=dim, window_sizes=attn_window_sizes, dim_head=dim_head, heads=heads, dropout=attn_dropout, causal=attn_causal)
         self.conv = ConformerConvModule(dim = dim, causal = conv_causal, expansion_factor = conv_expansion_factor, kernel_size = conv_kernel_size, dropout = conv_dropout)
         self.ff2 = FeedForward(dim = dim, mult = ff_mult, dropout = ff_dropout)
 
@@ -436,4 +419,5 @@ if __name__ == "__main__":
         conv_expansion_factor = 2,
     )
     x = torch.randn(1, 100, 128)
-    print(model(x).shape)
+    print('num params:', sum(p.numel() for p in model.parameters()))
+    print('output shape:', model(x).shape)
