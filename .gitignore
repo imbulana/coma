@@ -1,5 +1,6 @@
 %APPDATA%
 .DS_Store
+__pycache__/
 
 TODO.md
 
