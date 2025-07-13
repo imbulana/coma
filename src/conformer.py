@@ -401,6 +401,8 @@ class Conformer(nn.Module):
     def __init__(
         self,
         dim,
+        vocab_size,
+        # max_seq_len,
         *,
         depth,
         num_classes = 30, # num composers
@@ -416,9 +418,10 @@ class Conformer(nn.Module):
     ):
         super().__init__()
         self.dim = dim
-        self.layers = nn.ModuleList([])
+        self.token_emb = nn.Embedding(vocab_size, dim)
         self.pos_emb = ScaledSinusoidalEmbedding(dim)
 
+        self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(ConformerBlock(
                 dim = dim,
@@ -433,23 +436,49 @@ class Conformer(nn.Module):
 
         self.classifier = Classifier(dim, num_classes)
 
-    def forward(self, x, mask=None):
+    def forward(self, x, labels=None, mask=None, return_loss=True):
+        x = self.token_emb(x)
         x = self.pos_emb(x) + x
+
         for block in self.layers:
             x = block(x, mask=mask)
 
-        return self.classifier(x)
+        logits = self.classifier(x)
+
+        if return_loss and exists(labels):
+            labels = labels.squeeze(-1)
+            loss = F.cross_entropy(logits, labels)
+            return loss
+        else:
+            return logits
+
 
 if __name__ == "__main__":
+    vocab_size = 30000
+    batch_size = 2
+    num_classes = 15
+
     model = Conformer(
-        dim = 128,
-        depth = 6,
+        dim = 512,
+        vocab_size = vocab_size,
+        # max_seq_len = 1024,
+        depth = 12,
         dim_head = 64,
         heads = 8,
         ff_mult = 4,
         conv_expansion_factor = 2,
-        num_classes = 30,
+        conv_kernel_size = 31,
+        attn_dropout = 0.,
+        ff_dropout = 0.,
+        conv_dropout = 0.,
+        num_classes=num_classes,
     )
-    x = torch.randn(1, 100, 128)
+
+    x = torch.randint(0, vocab_size, (batch_size, 1024))
+    labels = torch.randint(0, num_classes, (batch_size, 1))
+    print('x', x.shape)
+    print('labels', labels.shape)
+
     print('num params:', sum(p.numel() for p in model.parameters()))
-    print('output shape:', model(x).shape)
+    print('output shape:', model(x, labels, return_loss=True))
+    # print('output shape:', model(x, labels, return_loss=False).shape)
