@@ -364,7 +364,7 @@ class ConformerBlock(nn.Module):
         *,
         dim,
         attn_causal = False,
-        attn_window_sizes = [8, 16, 32],
+        attn_window_sizes = [8, 16, 64],
         dim_head = 64,
         heads = 8,
         ff_mult = 4,
@@ -433,11 +433,10 @@ class Conformer(nn.Module):
 
         self.classifier = Classifier(dim, num_classes)
 
-    def forward(self, x):
-
+    def forward(self, x, mask=None):
         x = self.pos_emb(x) + x
         for block in self.layers:
-            x = block(x)
+            x = block(x, mask=mask)
 
         return self.classifier(x)
 
