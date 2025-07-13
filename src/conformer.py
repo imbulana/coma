@@ -30,6 +30,36 @@ def calc_same_padding(kernel_size):
 
 # helper classes
 
+class Classifier(nn.Module):
+    def __init__(self, dim, num_classes):
+        super().__init__()
+        self.pool = nn.AdaptiveAvgPool1d(1)
+        self.linear = nn.Linear(dim, num_classes)
+
+    def forward(self, x):
+        x = rearrange(x, 'b n c -> b c n')
+        x = self.pool(x)
+        x = rearrange(x, 'b c 1 -> b c')
+        x = self.linear(x)
+        return x
+
+class LSTM(nn.Module):
+  def __init__(
+        self, 
+        encoder_dim,
+        decoder_dim, 
+        num_classes,
+        num_layers=1,
+    ):
+    super().__init__()
+    self.lstm = nn.LSTM(input_size=encoder_dim, hidden_size=decoder_dim, num_layers=num_layers, batch_first=True)
+    self.linear = nn.Linear(decoder_dim, num_classes)
+
+  def forward(self, x):
+    x, _ = self.lstm(x)
+    x = self.linear(x)
+    return x
+
 class ScaledSinusoidalEmbedding(nn.Module):
     def __init__(self, dim, theta = 10000):
         super().__init__()
@@ -104,7 +134,6 @@ class PreNorm(nn.Module):
         x = self.norm(x)
         return self.fn(x, **kwargs)
 
-# NOTE: dropout used?
 class LocalMHA(nn.Module):
     def __init__(
         self,
@@ -273,7 +302,7 @@ class MultiscaleLocalMHA(nn.Module):
             outs.append(attn(x, mask=mask))
 
         outs = torch.stack(outs, dim=0)
-        weights = torch.softmax(self.scale_weights, dim=0) # NOTE: ca
+        weights = torch.softmax(self.scale_weights, dim=0) # NOTE: clamp weights instead?
         out = einsum('s b n d, s -> b n d', outs, weights)
 
         return out
@@ -344,7 +373,7 @@ class ConformerBlock(nn.Module):
         attn_dropout = 0.,
         ff_dropout = 0.,
         conv_dropout = 0.,
-        conv_causal = False
+        conv_causal = False,
     ):
         super().__init__()
         self.ff1 = FeedForward(dim = dim, mult = ff_mult, dropout = ff_dropout)
@@ -374,6 +403,7 @@ class Conformer(nn.Module):
         dim,
         *,
         depth,
+        num_classes = 30, # num composers
         dim_head = 64,
         heads = 8,
         ff_mult = 4,
@@ -382,7 +412,7 @@ class Conformer(nn.Module):
         attn_dropout = 0.,
         ff_dropout = 0.,
         conv_dropout = 0.,
-        conv_causal = False
+        conv_causal = False,
     ):
         super().__init__()
         self.dim = dim
@@ -401,13 +431,15 @@ class Conformer(nn.Module):
 
             ))
 
+        self.classifier = Classifier(dim, num_classes)
+
     def forward(self, x):
 
         x = self.pos_emb(x) + x
         for block in self.layers:
             x = block(x)
 
-        return x
+        return self.classifier(x)
 
 if __name__ == "__main__":
     model = Conformer(
@@ -417,6 +449,7 @@ if __name__ == "__main__":
         heads = 8,
         ff_mult = 4,
         conv_expansion_factor = 2,
+        num_classes = 30,
     )
     x = torch.randn(1, 100, 128)
     print('num params:', sum(p.numel() for p in model.parameters()))
