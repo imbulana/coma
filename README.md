@@ -15,7 +15,10 @@ pip install -r requirements.txt
 
 ## References
 
-conformer implementation: https://github.com/lucidrains/conformer
+conformer: https://github.com/lucidrains/conformer
+
+local attention: https://github.com/lucidrains/local-attention
+
 tranformers: https://github.com/lucidrains/x-transformers
 
 ## Citations
