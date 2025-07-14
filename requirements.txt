@@ -1,2 +1,5 @@
 torch
 einops
+
+miditok
+scikit-learn
