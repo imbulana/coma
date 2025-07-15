@@ -436,7 +436,7 @@ class Conformer(nn.Module):
 
         self.classifier = Classifier(dim, num_classes)
 
-    def forward(self, x, labels=None, mask=None, return_loss=True):
+    def forward(self, x, mask=None, return_encoding=False):
         x = self.token_emb(x)
         x = self.pos_emb(x) + x
 
@@ -445,10 +445,8 @@ class Conformer(nn.Module):
 
         logits = self.classifier(x)
 
-        if return_loss and exists(labels):
-            labels = labels.squeeze(-1)
-            loss = F.cross_entropy(logits, labels)
-            return loss
+        if return_encoding:
+            return logits, x
         else:
             return logits
 
