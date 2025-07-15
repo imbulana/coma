@@ -294,18 +294,24 @@ class MultiscaleLocalMHA(nn.Module):
                 **kwargs
             ) for window_size in window_sizes
         ])
-        self.scale_weights = nn.Parameter(torch.ones(len(window_sizes)) / len(window_sizes))
+        self.scale_weights = (
+            nn.Parameter(torch.ones(len(window_sizes)) / len(window_sizes)) 
+            if len(window_sizes) > 1 else None
+        )
 
     def forward(self, x, mask=None):
         outs = []
         for attn in self.scales:
             outs.append(attn(x, mask=mask))
 
-        outs = torch.stack(outs, dim=0)
-        weights = torch.softmax(self.scale_weights, dim=0) # NOTE: clamp weights instead?
-        out = einsum('s b n d, s -> b n d', outs, weights)
+        if exists(self.scale_weights):
+            outs = torch.stack(outs, dim=0)
+            weights = torch.softmax(self.scale_weights, dim=0) # NOTE: clamp weights instead?
+            out = einsum('s b n d, s -> b n d', outs, weights)
 
-        return out
+            return out
+        else:
+            return outs[0]
 
 class FeedForward(nn.Module):
     def __init__(
@@ -408,6 +414,7 @@ class Conformer(nn.Module):
         num_classes = 30, # num composers
         dim_head = 64,
         heads = 8,
+        attn_window_sizes = [8, 16, 64],
         ff_mult = 4,
         conv_expansion_factor = 2,
         conv_kernel_size = 31,
@@ -428,6 +435,7 @@ class Conformer(nn.Module):
                 dim_head = dim_head,
                 heads = heads,
                 ff_mult = ff_mult,
+                attn_window_sizes = attn_window_sizes,
                 conv_expansion_factor = conv_expansion_factor,
                 conv_kernel_size = conv_kernel_size,
                 conv_causal = conv_causal
@@ -464,6 +472,7 @@ if __name__ == "__main__":
         dim_head = 64,
         heads = 8,
         ff_mult = 4,
+        attn_window_sizes = [8, 16, 64],
         conv_expansion_factor = 2,
         conv_kernel_size = 31,
         attn_dropout = 0.,
@@ -478,5 +487,5 @@ if __name__ == "__main__":
     print('labels', labels.shape)
 
     print('num params:', sum(p.numel() for p in model.parameters()))
-    print('output shape:', model(x, labels, return_loss=True))
-    # print('output shape:', model(x, labels, return_loss=False).shape)
+    # print('output shape:', model(x, return_encoding=True))
+    print('output shape:', model(x, return_encoding=False).shape)
