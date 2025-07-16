@@ -438,8 +438,10 @@ class Conformer(nn.Module):
                 attn_window_sizes = attn_window_sizes,
                 conv_expansion_factor = conv_expansion_factor,
                 conv_kernel_size = conv_kernel_size,
-                conv_causal = conv_causal
-
+                conv_causal = conv_causal,
+                attn_dropout = attn_dropout,
+                ff_dropout = ff_dropout,
+                conv_dropout = conv_dropout,
             ))
 
         self.classifier = Classifier(dim, num_classes)
