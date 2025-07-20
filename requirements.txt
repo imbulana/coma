@@ -3,3 +3,4 @@ einops
 
 miditok
 scikit-learn
+seaborn
