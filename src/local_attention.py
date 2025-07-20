@@ -63,7 +63,7 @@ class LocalAttention(Module):
         autopad = False,
         exact_windowsize = False,
         scale = None,
-        use_rotary_pos_emb = True,
+        use_rotary_pos_emb = False,
         use_xpos = False,
         xpos_scale_base = None
     ):
