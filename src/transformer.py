@@ -116,17 +116,26 @@ class GLU(nn.Module):
         out, gate = x.chunk(2, dim=self.dim)
         return out * gate.sigmoid()
 
+# attention, feedforward, and conv module
+
 class DepthWiseConv1d(nn.Module):
     def __init__(self, chan_in, chan_out, kernel_size, padding):
         super().__init__()
         self.padding = padding
         self.conv = nn.Conv1d(chan_in, chan_out, kernel_size, groups = chan_in)
 
-    def forward(self, x):
-        x = F.pad(x, self.padding)
-        return self.conv(x)
+    def forward(self, x, mask = None):
+        if exists(mask):
+            mask = rearrange(mask, 'b n -> b 1 n')
+            x = x.masked_fill(~mask, 0.)
 
-# attention, feedforward, and conv module
+        x = F.pad(x, self.padding)
+        out = self.conv(x)
+
+        if exists(mask):
+            out = out.masked_fill(~mask, 0.)
+        # return self.conv(x)
+        return out
 
 class Scale(nn.Module):
     def __init__(self, scale, fn):
@@ -330,7 +339,7 @@ class MultiscaleLocalMHA(nn.Module):
         else:
             out = outs[0]
         
-        # # Apply mask to the final output to zero out padding tokens
+        # TODO: verify: mask to the final output to zero out padding tokens
         # out = out * mask.unsqueeze(-1).float()
         
         return out
@@ -368,12 +377,16 @@ class ConformerConvModule(nn.Module):
         inner_dim = dim * expansion_factor
         padding = calc_same_padding(kernel_size) if not causal else (kernel_size - 1, 0)
 
-        self.net = nn.Sequential(
+        self.net1 = nn.Sequential(
             nn.LayerNorm(dim),
             Rearrange('b n c -> b c n'),
             nn.Conv1d(dim, inner_dim * 2, 1),
             GLU(dim=1),
-            DepthWiseConv1d(inner_dim, inner_dim, kernel_size = kernel_size, padding = padding),
+        )
+
+        self.conv_dw = DepthWiseConv1d(inner_dim, inner_dim, kernel_size = kernel_size, padding = padding)
+
+        self.net2 = nn.Sequential(
             nn.BatchNorm1d(inner_dim) if not causal else nn.Identity(),
             Swish(),
             nn.Conv1d(inner_dim, dim, 1),
@@ -381,8 +394,10 @@ class ConformerConvModule(nn.Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x):
-        return self.net(x)
+    def forward(self, x, mask = None):
+        x = self.net1(x)
+        x = self.conv_dw(x, mask = mask)
+        return self.net2(x)
 
 # Conformer Block
 
@@ -420,7 +435,7 @@ class ConformerBlock(nn.Module):
     def forward(self, x, mask = None):
         x = self.ff1(x) + x
         x = self.attn(x, mask = mask) + x
-        x = self.conv(x) + x
+        x = self.conv(x, mask = mask) + x
         x = self.ff2(x) + x
         x = self.post_norm(x)
         return x
