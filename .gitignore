@@ -4,5 +4,11 @@ __pycache__/
 
 TODO.md
 
+data/
+runs/
+logs/
+
 *.pdf
-datasets/
+*.pt
+*.ipynb
+tokenizer.json
