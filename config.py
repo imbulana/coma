@@ -17,8 +17,9 @@ MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
 
 SPLIT_DATA = True
 SHUFFLE = True
+SORT_BY = 'compositions' # 'compositions' or 'duration'
 TEST_SIZE = 0.1
-TOP_K_COMPOSERS = 3 # number of composers to train/test on
+TOP_K_COMPOSERS = 5 # select top k composers by total composition duration to train/test on
 MIN_COMPOSER_DURATION = 10000 # unused
 TO_SKIP = [] # composers to skip
 AUGMENT_DATA = False
@@ -48,7 +49,7 @@ TOKENIZER_PARAMS = {
 
 # training
 
-NUM_EPOCHS = 10
+NUM_EPOCHS = 20
 BATCH_SIZE = 8
 
 LEARNING_RATE = 2e-4

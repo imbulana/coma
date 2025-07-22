@@ -74,14 +74,21 @@ if SPLIT_DATA:
     split_parent_path = MAESTRO_DATA_PATH / "splits"
     df = pd.read_csv(MAESTRO_CSV)
 
-    # select top k composers by duration
+    if SORT_BY == 'compositions':
+        # select top k composers by number of compositions
+        composer_n_compositions = df.groupby('canonical_composer')['canonical_title'].nunique()
+        top_k_composers = composer_n_compositions.sort_values(ascending=False).head(TOP_K_COMPOSERS).index
 
-    composer_duration = df.groupby('canonical_composer')['duration'].sum()
-    top_k_composers = composer_duration.sort_values(ascending=False).head(TOP_K_COMPOSERS).index
+    elif SORT_BY == 'duration':
+        # select top k composers by duration
+        composer_duration = df.groupby('canonical_composer')['duration'].sum()
+        top_k_composers = composer_duration.sort_values(ascending=False).head(TOP_K_COMPOSERS).index
+    else:
+        raise ValueError(f"Invalid sort_by: {SORT_BY}. Must be 'compositions' or 'duration'.")
 
-    df= df[df['canonical_composer'].isin(top_k_composers)]
+    df = df[df['canonical_composer'].isin(top_k_composers)]
 
-    print(f"\nselected composers: {top_k_composers.tolist()}\n")
+    print(f"\nselected {len(top_k_composers)} composers: {top_k_composers.tolist()}\n")
     if TO_SKIP:
         print(f"\nskipping composers: {TO_SKIP}\n")
 
