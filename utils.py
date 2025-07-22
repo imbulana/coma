@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 from tqdm import tqdm
 
@@ -8,6 +9,8 @@ from miditok.pytorch_data import DatasetMIDI
 from sklearn.metrics import f1_score, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from config import *
 
 # data utils
 
@@ -52,6 +55,44 @@ class CompositionDataLoader:
         return self.group_loaders[idx]
 
 # train & eval utils
+
+def save_config(writer):
+    config_dict = {
+        "SEED": SEED,
+        "DEVICE": str(DEVICE),
+        "SPLIT_DATA": SPLIT_DATA,
+        "SHUFFLE": SHUFFLE,
+        "TEST_SIZE": TEST_SIZE,
+        "TOP_K_COMPOSERS": TOP_K_COMPOSERS,
+        "TO_SKIP": TO_SKIP,
+        "AUGMENT_DATA": AUGMENT_DATA,
+        "TRAIN_TOKENIZER": TRAIN_TOKENIZER,
+        "VOCAB_SIZE": VOCAB_SIZE,
+        "BEAT_RES": str(BEAT_RES),
+        "TOKENIZER_PARAMS": {k: str(v) for k, v in TOKENIZER_PARAMS.items()},
+        "NUM_EPOCHS": NUM_EPOCHS,
+        "BATCH_SIZE": BATCH_SIZE,
+        "LEARNING_RATE": LEARNING_RATE,
+        "WEIGHT_DECAY": WEIGHT_DECAY,
+        "MAX_SEQ_LEN": MAX_SEQ_LEN,
+        "MODEL_PARAMS": {
+            "DIM": DIM,
+            "DEPTH": DEPTH,
+            "DIM_HEAD": DIM_HEAD,
+            "HEADS": HEADS,
+            "FF_MULT": FF_MULT,
+            "ATTN_WINDOW_SIZES": ATTN_WINDOW_SIZES,
+            "CONV_EXPANSION_FACTOR": CONV_EXPANSION_FACTOR,
+            "CONV_KERNEL_SIZE": CONV_KERNEL_SIZE,
+            "ATTN_DROPOUT": ATTN_DROPOUT,
+            "FF_DROPOUT": FF_DROPOUT,
+            "CONV_DROPOUT": CONV_DROPOUT,
+            "PRENORM": PRENORM,
+            "QK_SCALE": QK_SCALE,
+        }
+    }
+    writer.add_text("config", json.dumps(config_dict, indent=2))
+
 
 def print_metrics(
     train_loss, train_acc, train_f1, 

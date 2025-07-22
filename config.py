@@ -15,7 +15,7 @@ MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
 
 # data splitting
 
-SPLIT_DATA = False
+SPLIT_DATA = True
 SHUFFLE = True
 SORT_BY = 'compositions' # must be in ['compositions', 'duration']
 TEST_SIZE = 0.1
@@ -31,19 +31,19 @@ TOKENIZER_LOAD_PATH = Path("tokenizer.json").resolve() # pretrained tokenizer pa
 TRAIN_TOKENIZER = True # whether to train a new tokenizer
 TOKENIZER_SAVE_PATH = Path("tokenizer.json").resolve()
 
-VOCAB_SIZE = 30000
+VOCAB_SIZE = 16000
 BEAT_RES = {(0, 1): 12, (1, 2): 4, (2, 4): 2, (4, 8): 1}
 TOKENIZER_PARAMS = {
     "pitch_range": (21, 109),
     "beat_res": BEAT_RES,
-    "num_velocities": 8,
+    "num_velocities": 24,
     "special_tokens": ["PAD", "BOS", "EOS"],
     "use_chords": True,
     "use_rests": True,
     "use_tempos": True,
     "use_time_signatures": True,
     "use_programs": False,  # no multitrack
-    "num_tempos": 16,
+    "num_tempos": 32,
     "tempo_range": (50, 200),  # (min_tempo, max_tempo)
 }
 
@@ -60,9 +60,9 @@ ATTN_WINDOW_SIZES = [8, 64]
 CONV_EXPANSION_FACTOR = 2
 CONV_KERNEL_SIZE = 31
 
-ATTN_DROPOUT = 0.3
-FF_DROPOUT = 0.3
-CONV_DROPOUT = 0.3
+ATTN_DROPOUT = 0.1
+FF_DROPOUT = 0.1
+CONV_DROPOUT = 0.1
 
 PRENORM = True
 QK_SCALE = 4

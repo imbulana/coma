@@ -35,28 +35,8 @@ os.makedirs(LOG_DIR / "f1" / "composition", exist_ok=True)
 writer = SummaryWriter(log_dir=LOG_DIR)
 
 # save config
-# TODO: add model params to config
-config_dict = {
-    "SEED": SEED,
-    "DEVICE": str(DEVICE),
-    "SPLIT_DATA": SPLIT_DATA,
-    "SHUFFLE": SHUFFLE,
-    "TEST_SIZE": TEST_SIZE,
-    "TOP_K_COMPOSERS": TOP_K_COMPOSERS,
-    "TO_SKIP": TO_SKIP,
-    "AUGMENT_DATA": AUGMENT_DATA,
-    "TRAIN_TOKENIZER": TRAIN_TOKENIZER,
-    "VOCAB_SIZE": VOCAB_SIZE,
-    "BEAT_RES": str(BEAT_RES),
-    "TOKENIZER_PARAMS": {k: str(v) for k, v in TOKENIZER_PARAMS.items()},
-    "NUM_EPOCHS": NUM_EPOCHS,
-    "BATCH_SIZE": BATCH_SIZE,
-    "LEARNING_RATE": LEARNING_RATE,
-    "WEIGHT_DECAY": WEIGHT_DECAY,
-    "MAX_SEQ_LEN": MAX_SEQ_LEN,
-}
 
-writer.add_text("config", json.dumps(config_dict, indent=2))
+save_config(writer)
 
 # set seed
 
