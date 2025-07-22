@@ -1,3 +1,5 @@
+# adapted from https://github.com/lucidrains/conformer
+
 import torch
 from torch import nn, einsum, arange, cat
 import torch.nn.functional as F
