@@ -1,17 +1,11 @@
-import math
-
 import torch
 from torch import nn, einsum, arange, cat
 import torch.nn.functional as F
 
-from einops import rearrange, repeat, pack, unpack
+from einops import rearrange
 from einops.layers.torch import Rearrange
 
 from local_attention import LocalAttention
-
-# constant
-
-TOKEN_SELF_ATTN_VALUE = -5e4
 
 # helper functions
 
@@ -244,8 +238,8 @@ class LocalMHA(nn.Module):
 
             q = q * (q.shape[-1] ** -0.5)
 
-            k = torch.cat((ck, k), dim = -2)
-            v = torch.cat((cv, v), dim = -2)
+            k = cat((ck, k), dim = -2)
+            v = cat((cv, v), dim = -2)
 
             effective_window_size = self.attn_fn.look_backward * self.window_size
 
@@ -498,18 +492,21 @@ class Transformer(nn.Module):
 
     def forward(self, x, mask=None, pad=True, return_encoding=False):
         seq_len = x.shape[-1]
+
+        # pad input to max sequence length
+
         if pad and seq_len < self.max_seq_len:
             pad_len = self.max_seq_len - seq_len
             pad = torch.zeros(x.shape[0], pad_len, dtype=x.dtype, device=x.device)
-            x = torch.cat((x, pad), dim=-1)
+            x = cat((x, pad), dim=-1)
 
             if exists(mask):
-                mask = torch.cat((mask, pad.bool()), dim=-1)
+                mask = cat((mask, pad.bool()), dim=-1)
+
+        # encoder layers
 
         x = self.token_emb(x)
         x = self.pos_emb(x, mask=mask) + x
-
-        # encoder layers
 
         for block in self.layers:
             x = block(x, mask=mask)
@@ -517,7 +514,7 @@ class Transformer(nn.Module):
         # sequence attention and classification
         
         attn_logits = self.sequence_attention(x)
-        if mask is not None:
+        if exists(mask):
             attn_logits = attn_logits.masked_fill(~mask.unsqueeze(-1), float('-inf'))
         
         attn_weights = torch.softmax(attn_logits, dim=1)
