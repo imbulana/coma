@@ -1,6 +1,11 @@
 torch
 einops
-
 miditok
-scikit-learn
+
+tqdm
+pandas
 seaborn
+matplotlib
+scikit-learn
+
+tensorboard
