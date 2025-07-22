@@ -164,23 +164,24 @@ def validate_chunks(model, valid_loader, criterion, device, epoch, writer, compo
 
     # confusion matrix
     cm = confusion_matrix(epoch_labels, epoch_predictions)
+    cm_normalized = cm.astype('float') / cm.sum(axis=1, keepdims=True)
     composer_names = composer_id2name.values()
 
     plt.figure(figsize=(7, 7))
-    sns.heatmap(cm, annot=True, fmt='.2f', cmap='Blues', xticklabels=composer_names, yticklabels=composer_names)
-    plt.title(f'Confusion Matrix (Epoch {epoch})')
+    sns.heatmap(cm_normalized, annot=True, fmt='.2f', cmap='Blues', xticklabels=composer_names, yticklabels=composer_names)
+    plt.title(f'Confusion Matrix (Epoch {epoch+1})')
     plt.xlabel('Predicted Composer')
     plt.ylabel('True Composer')
     plt.tight_layout()
     if save_path is not None:
-        plt.savefig(f'{save_path}/confusion_matrix_epoch_{epoch}.png')
+        plt.savefig(f'{save_path}/cm/epoch_{epoch}.png')
     if show_plots:
         plt.show()
 
     # per-composer f1 scores
     per_composer_f1 = f1_score(epoch_labels, epoch_predictions, average=None)
     plt.figure(figsize=(7, 4))
-    sns.barplot(x=composer_names, y=per_composer_f1, palette='viridis')
+    sns.barplot(x=composer_names, y=per_composer_f1, hue=composer_names, legend=False)
     plt.title(f'Per-Composer F1 Scores (Epoch {epoch})')
     plt.ylabel('F1 Score')
     plt.xlabel('Composer')
@@ -188,14 +189,14 @@ def validate_chunks(model, valid_loader, criterion, device, epoch, writer, compo
     plt.xticks(rotation=45, ha='right')
     plt.tight_layout()
     if save_path is not None:
-        plt.savefig(f'{save_path}/per_composer_f1_epoch_{epoch}.png')
+        plt.savefig(f'{save_path}/f1/epoch_{epoch}.png')
     if show_plots:
         plt.show()
 
-    val_type = 'test' if test else 'valid'
-    writer.add_scalar(f'{val_type}/epoch_loss', epoch_loss, epoch)
-    writer.add_scalar(f'{val_type}/epoch_accuracy', epoch_acc, epoch)
-    writer.add_scalar(f'{val_type}/epoch_f1', epoch_f1, epoch)
+    val_type = 'test' if test else 'val'
+    writer.add_scalar(f'{val_type}/chunk/epoch_loss', epoch_loss, epoch)
+    writer.add_scalar(f'{val_type}/chunk/epoch_accuracy', epoch_acc, epoch)
+    writer.add_scalar(f'{val_type}/chunk/epoch_f1', epoch_f1, epoch)
     
     return epoch_loss, epoch_acc, epoch_f1
 
@@ -265,7 +266,7 @@ def validate_composition(model, valid_loader, device, epoch, writer, composer_id
     epoch_acc_confidence_vote = 100. * correct_confidence_vote / total_confidence_vote
     epoch_f1_confidence_vote = f1_score(epoch_labels_confidence_vote, epoch_predictions_confidence_vote, average='macro')
 
-    writer.add_scalar('val/grouped/epoch_accuracy_majority', epoch_acc_majority, epoch)
-    writer.add_scalar('val/grouped/epoch_f1_majority', epoch_f1_majority, epoch)
+    writer.add_scalar('val/composition/epoch_accuracy_majority', epoch_acc_majority, epoch)
+    writer.add_scalar('val/composition/epoch_f1_majority', epoch_f1_majority, epoch)
     
     return epoch_acc_majority, epoch_f1_majority, epoch_acc_confidence_vote, epoch_f1_confidence_vote
