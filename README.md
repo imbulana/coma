@@ -78,7 +78,7 @@ Training Details:
 
 - Metrics: Tracks accuracy and F1-score, both at chunk and composition level (majority voting or confidence aggregation).
 
-## Results (todo)
+## Results (wip)
 
 Preliminary results (top K by number of compositions, 80:20 shuffled split, 9 epochs):
 
@@ -93,7 +93,7 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, 9 ep
 
 [`Visual-based Musical Data Representation for Composer Classification (2022)`](https://doi.org/10.1109/iSAI-NLP56921.2022.9960254)
 
-[`ComposeInStyle: Music composition with and without Style Transfer` (2021)](https://doi.org/10.1016/j.eswa.2021.116195)
+[`ComposeInStyle: Music composition with and without Style Transfer (2021)`](https://doi.org/10.1016/j.eswa.2021.116195)
 
 [`Composer Classification with Cross-modal Transfer Learning and Musically-informed Augmentation (2021)`](https://archives.ismir.net/ismir2021/paper/000100.pdf) (zero-shot)
 
@@ -119,4 +119,4 @@ miditok: https://github.com/Natooz/MidiTok
 
 [^2]: [`Music sequence generation and arrangement based on transformer model`](https://doi.org/10.1177/14727978251337904)
 
-[^3] [`The MAESTRO Dataset`](https://magenta.tensorflow.org/datasets/maestro)
+[^3]: [`The MAESTRO Dataset`](https://magenta.tensorflow.org/datasets/maestro)
