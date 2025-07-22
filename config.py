@@ -17,9 +17,9 @@ MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
 
 SPLIT_DATA = True
 SHUFFLE = True
-SORT_BY = 'compositions' # 'compositions' or 'duration'
+SORT_BY = 'compositions' # must be in ['compositions', 'duration']
 TEST_SIZE = 0.1
-TOP_K_COMPOSERS = 5 # select top k composers by total composition duration to train/test on
+TOP_K_COMPOSERS = 3 # select top k composers by SORT_BY type to train/test on
 MIN_COMPOSER_DURATION = 10000 # unused
 TO_SKIP = [] # composers to skip
 AUGMENT_DATA = False

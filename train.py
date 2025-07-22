@@ -27,14 +27,15 @@ from config import *
 
 # create log dirs
 
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(LOG_DIR / "cm", exist_ok=True)
-os.makedirs(LOG_DIR / "f1", exist_ok=True)
+os.makedirs(LOG_DIR / "cm" / "chunk", exist_ok=True)
+os.makedirs(LOG_DIR / "f1" / "chunk", exist_ok=True)
+os.makedirs(LOG_DIR / "cm" / "composition", exist_ok=True)
+os.makedirs(LOG_DIR / "f1" / "composition", exist_ok=True)
 
 writer = SummaryWriter(log_dir=LOG_DIR)
 
 # save config
-
+# TODO: add model params to config
 config_dict = {
     "SEED": SEED,
     "DEVICE": str(DEVICE),
@@ -64,7 +65,7 @@ random.seed(SEED)
 
 # load/train tokenizer and maestro data
 
-if os.path.exists(TOKENIZER_LOAD_PATH) and not TRAIN_TOKENIZER:
+if os.path.exists(TOKENIZER_LOAD_PATH):
     tokenizer = REMI(params=TOKENIZER_LOAD_PATH)
 else:
     TRAIN_TOKENIZER = True
@@ -221,22 +222,22 @@ val_composition_loader = CompositionDataLoader(val_composition_dataset, collator
 # instantiate encoder-classifier model
 
 model = Transformer(
-    dim = 64,
+    dim = DIM,
     vocab_size = len(tokenizer),
     max_seq_len = MAX_SEQ_LEN,
-    depth = 1,
-    dim_head = 4,
-    heads = 4,
-    ff_mult = 2,
-    attn_window_sizes = [8, 64],
-    conv_expansion_factor = 2,
-    conv_kernel_size = 31,
-    attn_dropout = 0.3,
-    ff_dropout = 0.3,
-    conv_dropout = 0.3,
+    depth = DEPTH,
+    dim_head = DIM_HEAD,
+    heads = HEADS,
+    ff_mult = FF_MULT,
+    attn_window_sizes = ATTN_WINDOW_SIZES,
+    conv_expansion_factor = CONV_EXPANSION_FACTOR,
+    conv_kernel_size = CONV_KERNEL_SIZE,
+    attn_dropout = ATTN_DROPOUT,
+    ff_dropout = FF_DROPOUT,
+    conv_dropout = CONV_DROPOUT,
     num_classes=len(composers),
-    prenorm=True,
-    qk_scale=4,
+    prenorm=PRENORM,
+    qk_scale=QK_SCALE,
 ).to(DEVICE)
 
 print(f"\nmodel size: {sum(p.numel() for p in model.parameters()):,}\n")
@@ -261,7 +262,8 @@ for epoch in range(1, NUM_EPOCHS+1):
         save_path=LOG_DIR, show_plots=False
     )
     valid_acc_maj, valid_f1_maj, valid_acc_conf, valid_f1_conf = validate_composition(
-        model, val_composition_loader, DEVICE, epoch, writer, composer_id2name
+        model, val_composition_loader, DEVICE, epoch, writer, composer_id2name, 
+        save_path=LOG_DIR, show_plots=False, eval_type='composition'
     )
 
     print_metrics(

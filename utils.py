@@ -67,6 +67,43 @@ def print_metrics(
     if group_valid_acc_confidence_vote is not None:
         print(f"Composition Valid Acc (Confidence Vote): {group_valid_acc_confidence_vote:.2f}% | Composition Valid F1 (Confidence Vote): {group_valid_f1_confidence_vote:.2f}\n")
     
+def plot_metrics(
+    epoch_labels, epoch_predictions, composer_id2name, epoch, 
+    save_path, show_plots, eval_type='chunk'
+):
+    # confusion matrix
+    cm = confusion_matrix(epoch_labels, epoch_predictions)
+    cm_normalized = cm.astype('float') / cm.sum(axis=1, keepdims=True)
+    composer_names = composer_id2name.values()
+
+    plt.figure(figsize=(7, 7))
+    sns.heatmap(cm_normalized, annot=True, fmt='.2f', cmap='Blues', xticklabels=composer_names, yticklabels=composer_names)
+    plt.title(f'Confusion Matrix (Epoch {epoch+1})')
+    plt.xlabel('Predicted Composer')
+    plt.ylabel('True Composer')
+    plt.tight_layout()
+    if save_path is not None:
+        plt.savefig(f'{save_path}/cm/{eval_type}/epoch_{epoch}.png')
+    if show_plots:
+        plt.show()
+
+    # per-composer f1 scores
+    per_composer_f1 = f1_score(epoch_labels, epoch_predictions, average=None)
+    plt.figure(figsize=(7, 4))
+    sns.barplot(
+        y=list(composer_names), x=per_composer_f1, orient="h", hue=list(composer_names), legend=False
+    )
+    plt.title(f'Per-Composer F1 Scores (Epoch {epoch})')
+    plt.xlabel('F1 Score')
+    plt.ylabel('Composer')
+    plt.xlim(0, 1)
+    plt.yticks(rotation=0)
+    plt.tight_layout()
+    if save_path is not None:
+        plt.savefig(f'{save_path}/f1/{eval_type}/epoch_{epoch}.png')
+    if show_plots:
+        plt.show()
+
 def train_epoch(model, train_loader, criterion, optimizer, device, epoch, writer):
     model.train()
     total_loss = 0
@@ -122,7 +159,10 @@ def train_epoch(model, train_loader, criterion, optimizer, device, epoch, writer
     
     return epoch_loss, epoch_acc, epoch_f1
 
-def validate_chunks(model, valid_loader, criterion, device, epoch, writer, composer_id2name, test=False, save_path=None, show_plots=False):
+def validate_chunks(
+    model, valid_loader, criterion, device, epoch, writer, composer_id2name, test=False, 
+    save_path=None, show_plots=False, eval_type='chunk'
+):
     model.eval()
     total_loss = 0
     correct = 0
@@ -162,36 +202,7 @@ def validate_chunks(model, valid_loader, criterion, device, epoch, writer, compo
     epoch_acc = 100. * correct / total
     epoch_f1 = f1_score(epoch_labels, epoch_predictions, average='macro')
 
-    # confusion matrix
-    cm = confusion_matrix(epoch_labels, epoch_predictions)
-    cm_normalized = cm.astype('float') / cm.sum(axis=1, keepdims=True)
-    composer_names = composer_id2name.values()
-
-    plt.figure(figsize=(7, 7))
-    sns.heatmap(cm_normalized, annot=True, fmt='.2f', cmap='Blues', xticklabels=composer_names, yticklabels=composer_names)
-    plt.title(f'Confusion Matrix (Epoch {epoch+1})')
-    plt.xlabel('Predicted Composer')
-    plt.ylabel('True Composer')
-    plt.tight_layout()
-    if save_path is not None:
-        plt.savefig(f'{save_path}/cm/epoch_{epoch}.png')
-    if show_plots:
-        plt.show()
-
-    # per-composer f1 scores
-    per_composer_f1 = f1_score(epoch_labels, epoch_predictions, average=None)
-    plt.figure(figsize=(7, 4))
-    sns.barplot(x=composer_names, y=per_composer_f1, hue=composer_names, legend=False)
-    plt.title(f'Per-Composer F1 Scores (Epoch {epoch})')
-    plt.ylabel('F1 Score')
-    plt.xlabel('Composer')
-    plt.ylim(0, 1)
-    plt.xticks(rotation=45, ha='right')
-    plt.tight_layout()
-    if save_path is not None:
-        plt.savefig(f'{save_path}/f1/epoch_{epoch}.png')
-    if show_plots:
-        plt.show()
+    plot_metrics(epoch_labels, epoch_predictions, composer_id2name, epoch, save_path, show_plots, eval_type)
 
     val_type = 'test' if test else 'val'
     writer.add_scalar(f'{val_type}/chunk/epoch_loss', epoch_loss, epoch)
@@ -200,7 +211,10 @@ def validate_chunks(model, valid_loader, criterion, device, epoch, writer, compo
     
     return epoch_loss, epoch_acc, epoch_f1
 
-def validate_composition(model, valid_loader, device, epoch, writer, composer_id2name):
+def validate_composition(
+    model, valid_loader, device, epoch, writer, composer_id2name,
+    save_path=None, show_plots=False, eval_type='composition'
+):
     model.eval()
 
     correct_majority = 0
@@ -258,6 +272,15 @@ def validate_composition(model, valid_loader, device, epoch, writer, composer_id
                 epoch_predictions_majority.append(predicted.item())
                 epoch_labels_confidence_vote.append(label.item())
                 epoch_predictions_confidence_vote.append(confidence_vote_predicted.item())
+
+    plot_metrics(
+        epoch_labels_majority, epoch_predictions_majority, composer_id2name, epoch, 
+        save_path, show_plots, eval_type
+    )
+    plot_metrics(
+        epoch_labels_confidence_vote, epoch_predictions_confidence_vote, composer_id2name, epoch, 
+        save_path, show_plots, eval_type
+    )
 
     # log epoch metrics
 
