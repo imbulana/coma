@@ -15,7 +15,7 @@ MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
 
 # data splitting
 
-SPLIT_DATA = True
+SPLIT_DATA = False
 SHUFFLE = True
 SORT_BY = 'compositions' # must be in ['compositions', 'duration']
 TEST_SIZE = 0.1
@@ -46,6 +46,26 @@ TOKENIZER_PARAMS = {
     "num_tempos": 16,
     "tempo_range": (50, 200),  # (min_tempo, max_tempo)
 }
+
+# model
+
+DIM = 64
+DEPTH = 1
+DIM_HEAD = 4
+HEADS = 4
+FF_MULT = 2
+
+ATTN_WINDOW_SIZES = [8, 64]
+
+CONV_EXPANSION_FACTOR = 2
+CONV_KERNEL_SIZE = 31
+
+ATTN_DROPOUT = 0.3
+FF_DROPOUT = 0.3
+CONV_DROPOUT = 0.3
+
+PRENORM = True
+QK_SCALE = 4
 
 # training
 
