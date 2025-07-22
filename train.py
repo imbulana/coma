@@ -21,7 +21,7 @@ from sklearn.model_selection import train_test_split
 from src import Transformer
 from utils import *
 
-# config
+# load config
 
 from config import *
 
@@ -32,10 +32,9 @@ os.makedirs(LOG_DIR / "f1" / "chunk", exist_ok=True)
 os.makedirs(LOG_DIR / "cm" / "composition", exist_ok=True)
 os.makedirs(LOG_DIR / "f1" / "composition", exist_ok=True)
 
+# tensorboard writer
+
 writer = SummaryWriter(log_dir=LOG_DIR)
-
-# save config
-
 save_config(writer)
 
 # set seed
@@ -45,7 +44,7 @@ random.seed(SEED)
 
 # load/train tokenizer and maestro data
 
-if os.path.exists(TOKENIZER_LOAD_PATH):
+if TOKENIZER_LOAD_PATH is not None and TOKENIZER_LOAD_PATH.exists():
     tokenizer = REMI(params=TOKENIZER_LOAD_PATH)
 else:
     TRAIN_TOKENIZER = True

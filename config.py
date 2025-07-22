@@ -18,8 +18,8 @@ MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
 SPLIT_DATA = True
 SHUFFLE = True
 SORT_BY = 'compositions' # must be in ['compositions', 'duration']
-TEST_SIZE = 0.1
-TOP_K_COMPOSERS = 3 # select top k composers by SORT_BY type to train/test on
+TEST_SIZE = 0.2
+TOP_K_COMPOSERS = 13 # select top k composers by SORT_BY type to train/test on
 MIN_COMPOSER_DURATION = 10000 # unused
 TO_SKIP = [] # composers to skip
 AUGMENT_DATA = False
@@ -31,7 +31,7 @@ TOKENIZER_LOAD_PATH = Path("tokenizer.json").resolve() # pretrained tokenizer pa
 TRAIN_TOKENIZER = True # whether to train a new tokenizer
 TOKENIZER_SAVE_PATH = Path("tokenizer.json").resolve()
 
-VOCAB_SIZE = 16000
+VOCAB_SIZE = 30000
 BEAT_RES = {(0, 1): 12, (1, 2): 4, (2, 4): 2, (4, 8): 1}
 TOKENIZER_PARAMS = {
     "pitch_range": (21, 109),
@@ -49,7 +49,7 @@ TOKENIZER_PARAMS = {
 
 # model
 
-DIM = 64
+DIM = 128
 DEPTH = 1
 DIM_HEAD = 4
 HEADS = 4
