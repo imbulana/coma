@@ -1,5 +1,5 @@
-# TODO: add argparse, config file
 import os
+import json
 import random
 import pandas as pd
 import shutil
@@ -10,9 +10,6 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from torch.utils.tensorboard import SummaryWriter
-from datetime import datetime
-
-from pathlib import Path
 
 from miditok import REMI, TokenizerConfig
 from miditok.pytorch_data import DatasetMIDI, DataCollator
@@ -26,41 +23,39 @@ from utils import *
 
 # config
 
-MAESTRO_DATA_PATH = Path("data/maestro-v3.0.0").resolve()
-MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
-TOKENIZER_PATH = Path("tokenizer.json").resolve()
+from config import *
 
-# SPLIT_DATA = True if not os.path.exists(MAESTRO_DATA_PATH / "splits") else False
-SPLIT_DATA = True
-SHUFFLE = True
-TRAIN_TOKENIZER = True
-TEST_SIZE = 0.2
-MIN_COMPOSER_DURATION = 10000
-TOP_K_COMPOSERS = 14 # train/test on top k composers
-TO_SKIP = []
-# TO_SKIP = ['Schubert']
-# TO_SKIP = ['Modest', 'Claude', 'Schubert', 'Brahms', 'Haydn', 'Scriabin', 'Mozart', 'Sergei', 'Felix', 'Bach', 'Schumann', 'Mussorgsky']
-AUGMENT_DATA = False
+# create log dirs
 
-LOG_DIR = Path("logs") / datetime.now().strftime("%Y%m%d_%H%M%S")
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(LOG_DIR / "cm", exist_ok=True)
 os.makedirs(LOG_DIR / "f1", exist_ok=True)
 
-SEED = 42
-TEST_SIZE = 0.1
-NUM_EPOCHS = 10
-BATCH_SIZE = 8
-LEARNING_RATE = 2e-4
-WEIGHT_DECAY = 2e-4
-MAX_SEQ_LEN = 1024
-DEVICE = (
-    'cuda' if torch.cuda.is_available() else
-    'mps' if torch.backends.mps.is_available() else
-    'cpu'
-)
-
 writer = SummaryWriter(log_dir=LOG_DIR)
+
+# save config
+
+config_dict = {
+    "SEED": SEED,
+    "DEVICE": str(DEVICE),
+    "SPLIT_DATA": SPLIT_DATA,
+    "SHUFFLE": SHUFFLE,
+    "TEST_SIZE": TEST_SIZE,
+    "TOP_K_COMPOSERS": TOP_K_COMPOSERS,
+    "TO_SKIP": TO_SKIP,
+    "AUGMENT_DATA": AUGMENT_DATA,
+    "TRAIN_TOKENIZER": TRAIN_TOKENIZER,
+    "VOCAB_SIZE": VOCAB_SIZE,
+    "BEAT_RES": str(BEAT_RES),
+    "TOKENIZER_PARAMS": {k: str(v) for k, v in TOKENIZER_PARAMS.items()},
+    "NUM_EPOCHS": NUM_EPOCHS,
+    "BATCH_SIZE": BATCH_SIZE,
+    "LEARNING_RATE": LEARNING_RATE,
+    "WEIGHT_DECAY": WEIGHT_DECAY,
+    "MAX_SEQ_LEN": MAX_SEQ_LEN,
+}
+
+writer.add_text("config", json.dumps(config_dict, indent=2))
 
 # set seed
 
@@ -69,8 +64,8 @@ random.seed(SEED)
 
 # load/train tokenizer and maestro data
 
-if os.path.exists(TOKENIZER_PATH) and not TRAIN_TOKENIZER:
-    tokenizer = REMI(params=TOKENIZER_PATH)
+if os.path.exists(TOKENIZER_LOAD_PATH) and not TRAIN_TOKENIZER:
+    tokenizer = REMI(params=TOKENIZER_LOAD_PATH)
 else:
     TRAIN_TOKENIZER = True
 
@@ -113,8 +108,6 @@ if SPLIT_DATA:
     if TRAIN_TOKENIZER:
         print("\ntraining tokenizer...\n")
 
-        from train_tokenizer import TOKENIZER_PARAMS, VOCAB_SIZE, SAVE_PATH
-
         train_paths = df[df['split'] == 'train']['midi_filename'].apply(
             lambda x: str(MAESTRO_DATA_PATH / x)
         ).tolist()
@@ -128,7 +121,7 @@ if SPLIT_DATA:
             vocab_size=VOCAB_SIZE,
             files_paths=train_paths,
         )
-        tokenizer.save(SAVE_PATH)
+        tokenizer.save(TOKENIZER_SAVE_PATH)
 
     # remove existing split
 
@@ -175,19 +168,6 @@ get_composer_label = lambda dummy1, dummy2, x: x.parent.parent.name # signature 
 midi_paths_train = list(MAESTRO_DATA_PATH.glob(leaf("train")))
 midi_paths_valid = list(MAESTRO_DATA_PATH.glob(leaf("validation")))
 midi_paths_test = list(MAESTRO_DATA_PATH.glob(leaf("test")))
-
-_SHUFFLE = False
-if _SHUFFLE:
-    all_midi_paths = midi_paths_train + midi_paths_valid + midi_paths_test
-    df_all = pd.DataFrame(all_midi_paths, columns=['path'])
-    df_all['composer'] = df_all['path'].apply(lambda x: x.parent.parent.name)
-
-    X_train, X_valid, y_train, y_valid = train_test_split(
-        df_all['path'], df_all['composer'], test_size=TEST_SIZE, random_state=42, stratify=df_all['composer']
-    )
-
-    midi_paths_train = X_train.tolist()
-    midi_paths_valid = X_valid.tolist()
 
 if AUGMENT_DATA:
     augment_dataset(
@@ -256,7 +236,6 @@ print(f"\nmodel size: {sum(p.numel() for p in model.parameters()):,}\n")
 
 # optimizer
 
-# optim = Adam(model.parameters(), lr=LEARNING_RATE)
 optim = AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 criterion = nn.CrossEntropyLoss()
 
@@ -269,14 +248,11 @@ for epoch in range(1, NUM_EPOCHS+1):
     train_loss, train_acc, train_f1 = train_epoch(
         model, train_chunk_loader, criterion, optim, DEVICE, epoch, writer
     )
+
     valid_loss, valid_acc, valid_f1 = validate_chunks(
         model, val_chunk_loader, criterion, DEVICE, epoch, writer, composer_id2name, 
         save_path=LOG_DIR, show_plots=False
     )
-    # test_loss, test_acc, test_f1 = validate_chunks(
-    #     model, test_loader, DEVICE, epoch, writer, composer_id2name, test=True
-    # )
-
     valid_acc_maj, valid_f1_maj, valid_acc_conf, valid_f1_conf = validate_composition(
         model, val_composition_loader, DEVICE, epoch, writer, composer_id2name
     )
