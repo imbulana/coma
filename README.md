@@ -32,19 +32,17 @@ mv 'maestro-v3.0.0' 'data/maestro-v3.0.0'
 
 ## Usage
 
-Train the tokenizer with
-
-```bash
-python3 train_tokenizer.py
-```
-
-Adjust training params in [`train.py`](/train.py) and begin training the transformer with
+Adjust training params in [`config.py`](/config.py) and begin training the transformer with
 
 ```bash
 python3 train.py
 ```
 
-Tensorboard logs will be saved in the `LOG_DIR` directory.
+Tensorboard logs and plots will be saved in the specified `LOG_DIR` directory. View the logs with
+
+```bash
+tensorboard --logdir=logs
+```
 
 ## References
 
