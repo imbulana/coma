@@ -19,19 +19,20 @@ SPLIT_DATA = True
 SHUFFLE = True
 SORT_BY = 'compositions' # must be in ['compositions', 'duration']
 TEST_SIZE = 0.2
-TOP_K_COMPOSERS = 13 # select top k composers by SORT_BY type to train/test on
-MIN_COMPOSER_DURATION = 10000 # unused
+TOP_K_COMPOSERS = 3 # select top K composers by SORT_BY type to train/test on
 TO_SKIP = [] # composers to skip
 AUGMENT_DATA = False
 
 # tokenizer
 
+USE_PRETRAINED_TOKENIZER = False
 TOKENIZER_LOAD_PATH = Path("tokenizer.json").resolve() # pretrained tokenizer path
 
-TRAIN_TOKENIZER = True # whether to train a new tokenizer
+TRAIN_TOKENIZER = False # whether to train the tokenizer to a target vocab size with byte pair encoding
+VOCAB_SIZE = 512 # target vocab size for tokenizer training
+
 TOKENIZER_SAVE_PATH = Path("tokenizer.json").resolve()
 
-VOCAB_SIZE = 30000
 BEAT_RES = {(0, 1): 12, (1, 2): 4, (2, 4): 2, (4, 8): 1}
 TOKENIZER_PARAMS = {
     "pitch_range": (21, 109),
@@ -49,30 +50,30 @@ TOKENIZER_PARAMS = {
 
 # model
 
-DIM = 128
+DIM = 144
 DEPTH = 1
-DIM_HEAD = 4
-HEADS = 4
+DIM_HEAD = 2
+HEADS = 2
 FF_MULT = 2
 
 ATTN_WINDOW_SIZES = [8, 64]
 
 CONV_EXPANSION_FACTOR = 2
-CONV_KERNEL_SIZE = 31
+CONV_KERNEL_SIZE = 8
 
 ATTN_DROPOUT = 0.1
 FF_DROPOUT = 0.1
 CONV_DROPOUT = 0.1
 
 PRENORM = True
-QK_SCALE = 4
+QK_SCALE = 2
 
 # training
 
 NUM_EPOCHS = 20
 BATCH_SIZE = 8
 
-LEARNING_RATE = 2e-4
+LEARNING_RATE = 2e-4 # TODO: add scheduler
 WEIGHT_DECAY = 2e-4
 
 MAX_SEQ_LEN = 1024

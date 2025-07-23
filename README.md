@@ -80,12 +80,13 @@ Training Details:
 
 ## Results (wip)
 
-Preliminary results (top K by number of compositions, 80:20 shuffled split, 9 epochs):
+Preliminary results (top K by number of compositions, 80:20 shuffled split, <10 epochs):
 
-| K | Composition F1 (Confidence) | Composition F1 (Majority) | Chunk F1 |
-|---|-----------------------------|---------------------------|----------|
-| 3 | 90.59                       | 90.15                     | 69.11    |
-| 5 | 84.79                       | 85.26                     | 70.91    |
+| # composers                          | Composition F1 (Confidence Agg) | Composition F1 (Majority Vote) | Chunk F1 | # params |
+|--------------------------------------|---------------------------------|--------------------------------|----------|----------|
+| 3 [(config)](/configs/K=3.json)      | 0.98                            | 0.98                           | 0.84     | 406,948  |
+| 5 [(config)](/configs/K=5.json)      | 0.95                            | 0.92                           | 0.82     | 406,372  |
+| 10 [(config)](/configs/K=10.json) IP | 0.89                            | 0.84                           | 0.67     | 407,812  | 
 
 ## Related Works
 
@@ -97,11 +98,14 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, 9 ep
 
 [`Composer Classification with Cross-modal Transfer Learning and Musically-informed Augmentation (2021)`](https://archives.ismir.net/ismir2021/paper/000100.pdf) (zero-shot)
 
-The following works achieve perfect acc/f1 but it is unclear and not explicitly mentioned if and how they ensure that no composition (by title) is in more than one split.
+[`Automated Thematic Composer Classification Using Segment Retrieval (2024)`](https://doi.org/10.1109/MIPR62202.2024.00032)
+
+The following work achieves perfect acc/f1. Based on their code release, it appears that there is likely data leakage. 
+Will verify ltr : ) 
 
 [`NLP-based music processing for composer classification (2023)`](https://doi.org/10.1038/s41598-023-40332-0)
 
-[`Automated Thematic Composer Classification Using Segment Retrieval (2024)`](https://doi.org/10.1109/MIPR62202.2024.00032)
+code: https://github.com/SirawitC/NLP-based-music-processing-for-composer-classification
 
 ## References
 

@@ -1,5 +1,4 @@
 import os
-import json
 import random
 import pandas as pd
 import shutil
@@ -44,10 +43,13 @@ random.seed(SEED)
 
 # load/train tokenizer and maestro data
 
-if TOKENIZER_LOAD_PATH is not None and TOKENIZER_LOAD_PATH.exists():
+if USE_PRETRAINED_TOKENIZER and TOKENIZER_LOAD_PATH.exists():
+    print(f"\nloading pretrained tokenizer from {TOKENIZER_LOAD_PATH}\n")
     tokenizer = REMI(params=TOKENIZER_LOAD_PATH)
 else:
-    TRAIN_TOKENIZER = True
+    config = TokenizerConfig(**TOKENIZER_PARAMS)
+    tokenizer = REMI(config)
+    print(f"\nusing base tokenizer with vocab size: {len(tokenizer)}\n")
 
 if SPLIT_DATA:
 
@@ -93,14 +95,11 @@ if SPLIT_DATA:
     # train tokenizer
 
     if TRAIN_TOKENIZER:
-        print("\ntraining tokenizer...\n")
+        print(f"\ntraining tokenizer to target vocab size: {VOCAB_SIZE}\n")
 
         train_paths = df[df['split'] == 'train']['midi_filename'].apply(
             lambda x: str(MAESTRO_DATA_PATH / x)
         ).tolist()
-
-        config = TokenizerConfig(**TOKENIZER_PARAMS)
-        tokenizer = REMI(config)
 
         # train the tokenizer with Byte Pair Encoding (BPE) to build the vocabulary
 
@@ -190,6 +189,7 @@ print(f"\ntrain samples: {len(train_dataset)}")
 print(f"valid samples: {len(val_dataset)}")
 # print(f"test samples: {len(test_dataset)}\n")
 
+# collator pads left to longest sequence length in batch
 collator = DataCollator(pad_token_id=tokenizer["PAD_None"])
 train_chunk_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collator)
 val_chunk_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collator)
