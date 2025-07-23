@@ -11,6 +11,9 @@ from local_attention import LocalAttention
 
 # helper functions
 
+def is_masked(x, mask):
+    return (x.masked_select(~mask.unsqueeze(-1)).abs() < 1e-5).all()
+
 def exists(val):
     return val is not None
 
@@ -92,12 +95,12 @@ class ScaledSinusoidalEmbedding(nn.Module):
         emb = cat((emb.sin(), emb.cos()), dim = -1)
         emb = emb * self.scale
         
-        # Apply mask if provided - zero out positional embeddings for padding tokens
+        out = emb + x
+
         if exists(mask):
-            # Expand mask to match embedding dimensions
-            emb = emb * mask.unsqueeze(-1).float()
+            out = out.masked_fill(~mask.unsqueeze(-1), 0.)
         
-        return emb
+        return out
 
 class Swish(nn.Module):
     def forward(self, x):
@@ -130,7 +133,6 @@ class DepthWiseConv1d(nn.Module):
 
         if exists(mask):
             out = out.masked_fill(~mask, 0.)
-        # return self.conv(x)
         return out
 
 class Scale(nn.Module):
@@ -326,17 +328,17 @@ class MultiscaleLocalMHA(nn.Module):
     def forward(self, x, mask=None):
         outs = []
         for attn in self.scales:
-            outs.append(attn(x, mask=mask))
-
+            x = attn(x, mask=mask)
+            if exists(mask):
+                x = x.masked_fill(~mask.unsqueeze(-1), 0.)
+            outs.append(x)
+        
         if exists(self.scale_weights):
             outs = torch.stack(outs, dim=0)
             weights = torch.softmax(self.scale_weights, dim=0)
             out = einsum('s b n d, s -> b n d', outs, weights)
         else:
             out = outs[0]
-        
-        # TODO: verify: mask to the final output to zero out padding tokens
-        # out = out * mask.unsqueeze(-1).float()
         
         return out
 
@@ -356,8 +358,12 @@ class FeedForward(nn.Module):
             nn.Dropout(dropout)
         )
 
-    def forward(self, x):
-        return self.net(x)
+    def forward(self, x, mask=None):
+        out = self.net(x)
+        if exists(mask):
+            out = out.masked_fill(~mask.unsqueeze(-1), 0.)
+
+        return out
 
 class ConformerConvModule(nn.Module):
     def __init__(
@@ -392,8 +398,16 @@ class ConformerConvModule(nn.Module):
 
     def forward(self, x, mask = None):
         x = self.net1(x)
-        x = self.conv_dw(x, mask = mask)
-        return self.net2(x)
+        if exists(mask):
+            x = x.masked_fill(~rearrange(mask, 'b n -> b 1 n'), 0.)
+
+        x = self.conv_dw(x, mask=mask)
+
+        out = self.net2(x)
+        if exists(mask):
+            out = out.masked_fill(~mask.unsqueeze(-1), 0.)
+
+        return out
 
 # Conformer Block
 
@@ -429,11 +443,18 @@ class ConformerBlock(nn.Module):
         self.post_norm = nn.LayerNorm(dim)
 
     def forward(self, x, mask = None):
-        x = self.ff1(x) + x
-        x = self.attn(x, mask = mask) + x
-        x = self.conv(x, mask = mask) + x
-        x = self.ff2(x) + x
+        x = self.ff1(x, mask=mask) + x
+
+        x = self.attn(x, mask=mask) + x
+        if exists(mask):
+            x = x.masked_fill(~mask.unsqueeze(-1), 0.)
+
+        x = self.conv(x, mask=mask) + x
+        x = self.ff2(x, mask=mask) + x
         x = self.post_norm(x)
+        if exists(mask):
+            x = x.masked_fill(~mask.unsqueeze(-1), 0.)
+
         return x
 
 # transformer
@@ -459,11 +480,12 @@ class Transformer(nn.Module):
         conv_causal = False,
         prenorm = True,
         qk_scale = 8,
+        padding_idx = 0,
     ):
         super().__init__()
         self.dim = dim
         self.max_seq_len = max_seq_len
-        self.token_emb = nn.Embedding(vocab_size, dim)
+        self.token_emb = nn.Embedding(vocab_size, dim, padding_idx=padding_idx)
         self.pos_emb = ScaledSinusoidalEmbedding(dim)
 
         self.layers = nn.ModuleList([])
@@ -493,22 +515,10 @@ class Transformer(nn.Module):
         )
 
     def forward(self, x, mask=None, pad=True, return_encoding=False):
-        seq_len = x.shape[-1]
-
-        # pad input to max sequence length
-
-        if pad and seq_len < self.max_seq_len:
-            pad_len = self.max_seq_len - seq_len
-            pad = torch.zeros(x.shape[0], pad_len, dtype=x.dtype, device=x.device)
-            x = cat((x, pad), dim=-1)
-
-            if exists(mask):
-                mask = cat((mask, pad.bool()), dim=-1)
+        x = self.token_emb(x)
+        x = self.pos_emb(x, mask=mask)
 
         # encoder layers
-
-        x = self.token_emb(x)
-        x = self.pos_emb(x, mask=mask) + x
 
         for block in self.layers:
             x = block(x, mask=mask)
@@ -551,14 +561,22 @@ if __name__ == "__main__":
         num_classes=num_classes,
     )
 
-    x = torch.randint(0, vocab_size, (batch_size, 1024))
+    pad_len = 10
+    x = torch.randint(0, vocab_size, (batch_size, 1024 - pad_len))
     labels = torch.randint(0, num_classes, (batch_size, 1))
+
     mask = torch.ones(batch_size, 1024, dtype=torch.bool)
-    mask[:,-10:] = False
-    assert mask[:,-10:].sum() == 0
-    print('x:', x.shape)
-    print('labels:', labels.shape)
-    print('mask:', mask.shape)
+
+    mask[:,-pad_len:] = False
+    assert mask[:,-pad_len:].sum() == 0
+
+    pad = torch.zeros(x.shape[0], pad_len, dtype=x.dtype, device=x.device)
+    x = cat((x, pad), dim=-1)
+    assert x[:, -pad_len:].sum() == 0
+
+    # print('x:', x.shape)
+    # print('labels:', labels.shape)
+    # print('mask:', mask.shape)
 
     print('num params:', sum(p.numel() for p in model.parameters()))
     # print('output shape:', model(x, mask=mask, return_encoding=True))
