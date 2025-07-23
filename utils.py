@@ -74,6 +74,8 @@ def save_config(writer):
         "BATCH_SIZE": BATCH_SIZE,
         "LEARNING_RATE": LEARNING_RATE,
         "WEIGHT_DECAY": WEIGHT_DECAY,
+        "LR_SCHEDULER": LR_SCHEDULER,
+        "MILESTONES": MILESTONES,
         "MAX_SEQ_LEN": MAX_SEQ_LEN,
         "MODEL_PARAMS": {
             "DIM": DIM,
@@ -147,7 +149,7 @@ def plot_metrics(
         plt.show()
     plt.close()
 
-def train_epoch(model, train_loader, criterion, optimizer, device, epoch, writer):
+def train_epoch(model, train_loader, criterion, optimizer, device, epoch, writer, scheduler=None):
     model.train()
     total_loss = 0
     correct = 0
@@ -199,6 +201,14 @@ def train_epoch(model, train_loader, criterion, optimizer, device, epoch, writer
     writer.add_scalar('train/epoch_loss', epoch_loss, epoch)
     writer.add_scalar('train/epoch_accuracy', epoch_acc, epoch)
     writer.add_scalar('train/epoch_f1', epoch_f1, epoch)
+    
+    # log learning rate and step scheduler
+
+    if scheduler is not None:
+        current_lr = scheduler.get_last_lr()[0]
+        writer.add_scalar('train/learning_rate', current_lr, epoch)
+
+        scheduler.step()
     
     return epoch_loss, epoch_acc, epoch_f1
 

@@ -70,10 +70,12 @@ QK_SCALE = 2
 
 # training
 
-NUM_EPOCHS = 20
+NUM_EPOCHS = 15
 BATCH_SIZE = 8
 
-LEARNING_RATE = 2e-4 # TODO: add scheduler
+LEARNING_RATE = 2e-4
+LR_SCHEDULER = "MultiStepLR" # must be in ["CosineAnnealingLR", "MultiStepLR", None])
+MILESTONES = [NUM_EPOCHS//4, NUM_EPOCHS*2//4, NUM_EPOCHS*3//4] # for MultiStepLR
 WEIGHT_DECAY = 2e-4
 
 MAX_SEQ_LEN = 1024

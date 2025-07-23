@@ -7,6 +7,7 @@ import torch
 from torch.optim import AdamW
 from torch import nn
 from torch.utils.data import DataLoader
+from torch.optim.lr_scheduler import CosineAnnealingLR, MultiStepLR
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -221,9 +222,17 @@ model = Transformer(
 
 print(f"\nmodel size: {sum(p.numel() for p in model.parameters()):,}\n")
 
-# optimizer
+# optimizer, loss, and lr scheduler
 
 optim = AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+
+scheduler = None
+if LR_SCHEDULER is not None:
+    if LR_SCHEDULER == "CosineAnnealingLR":
+        scheduler = CosineAnnealingLR(optim, T_max=NUM_EPOCHS, eta_min=1e-6)
+    elif LR_SCHEDULER == "MultiStepLR":
+        scheduler = MultiStepLR(optim, milestones=MILESTONES, gamma=0.1)
+
 criterion = nn.CrossEntropyLoss()
 
 # training
@@ -233,7 +242,7 @@ for epoch in range(1, NUM_EPOCHS+1):
     print(f"\nEpoch {epoch}/{NUM_EPOCHS}")
     
     train_loss, train_acc, train_f1 = train_epoch(
-        model, train_chunk_loader, criterion, optim, DEVICE, epoch, writer
+        model, train_chunk_loader, criterion, optim, DEVICE, epoch, writer, scheduler
     )
 
     valid_loss, valid_acc, valid_f1 = validate_chunks(
