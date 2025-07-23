@@ -34,36 +34,6 @@ def l2norm(tensor):
 
 # helper classes
 
-class Classifier(nn.Module):
-    def __init__(self, dim, num_classes):
-        super().__init__()
-        self.pool = nn.AdaptiveAvgPool1d(1)
-        self.linear = nn.Linear(dim, num_classes)
-
-    def forward(self, x):
-        x = rearrange(x, 'b n c -> b c n')
-        x = self.pool(x)
-        x = rearrange(x, 'b c 1 -> b c')
-        x = self.linear(x)
-        return x
-
-class LSTM(nn.Module):
-  def __init__(
-        self, 
-        encoder_dim,
-        decoder_dim, 
-        num_classes,
-        num_layers=1,
-    ):
-    super().__init__()
-    self.lstm = nn.LSTM(input_size=encoder_dim, hidden_size=decoder_dim, num_layers=num_layers, batch_first=True)
-    self.linear = nn.Linear(decoder_dim, num_classes)
-
-  def forward(self, x):
-    x, _ = self.lstm(x)
-    x = self.linear(x)
-    return x
-
 class ScaledSinusoidalEmbedding(nn.Module):
     def __init__(self, dim, theta = 10000):
         super().__init__()
