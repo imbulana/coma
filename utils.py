@@ -127,6 +127,7 @@ def plot_metrics(
         plt.savefig(f'{save_path}/cm/{eval_type}/epoch_{epoch}.png')
     if show_plots:
         plt.show()
+    plt.close()
 
     # per-composer f1 scores
     per_composer_f1 = f1_score(epoch_labels, epoch_predictions, average=None)
@@ -144,6 +145,7 @@ def plot_metrics(
         plt.savefig(f'{save_path}/f1/{eval_type}/epoch_{epoch}.png')
     if show_plots:
         plt.show()
+    plt.close()
 
 def train_epoch(model, train_loader, criterion, optimizer, device, epoch, writer):
     model.train()
