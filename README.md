@@ -21,8 +21,8 @@ Model Architecture (see [`src/transformer.py`](src/transformer.py)):
 1. Create a conda environment with python 3.11:
 
 ```bash
-conda create -n mape python=3.11
-conda activate mape
+conda create -n coma python=3.11
+conda activate coma
 ```
 
 2. Install dependencies:
@@ -46,7 +46,7 @@ Data Split & Preprocessing:
 
 There are various options for data preparation and splitting:
 
-- Tokenizer: Uses miditok REMI tokenizer, either loaded or trained from scratch on the training set.
+- Tokenizer: Uses miditok REMI tokenizer, either loaded, untrained, or trained from scratch on the training set to a target vocab size.
 
 - Select Composers: Only top K composers (by number of compositions or total duration) are selected (`TOP_K_COMPOSERS` in config).
 
@@ -118,6 +118,40 @@ conformer: https://github.com/jreremy/conformer, https://github.com/lucidrains/c
 miditok: https://github.com/Natooz/MidiTok
 
 ## Citations
+
+```bibtex
+@misc{
+    gulati2020conformer,
+    title   = {Conformer: Convolution-augmented Transformer for Speech Recognition},
+    author  = {Anmol Gulati and James Qin and Chung-Cheng Chiu and Niki Parmar and Yu Zhang and Jiahui Yu and Wei Han and Shibo Wang and Zhengdong Zhang and Yonghui Wu and Ruoming Pang},
+    year    = {2020},
+    eprint  = {2005.08100},
+    archivePrefix = {arXiv},
+    primaryClass = {eess.AS}
+}
+```
+
+```bibtex
+@article{
+    Cui_Hu_Huang_2025, 
+    title={Music sequence generation and arrangement based on Transformer model}, 
+    author={Cui, Xiao Hong and Hu, Pan and Huang, Zheng}, 
+    journal={Journal of Computational Methods in Sciences and Engineering}, 
+    year={2025}
+    DOI={10.1177/14727978251337904}, 
+} 
+```
+
+```bibtex
+@inproceedings{
+  hawthorne2018enabling,
+  title={Enabling Factorized Piano Music Modeling and Generation with the {MAESTRO} Dataset},
+  author={Curtis Hawthorne and Andriy Stasyuk and Adam Roberts and Ian Simon and Cheng-Zhi Anna Huang and Sander Dieleman and Erich Elsen and Jesse Engel and Douglas Eck},
+  booktitle={International Conference on Learning Representations},
+  year={2019},
+  url={https://openreview.net/forum?id=r1lYRjC9F7},
+}
+```
 
 [^1]: [`Conformer: Convolution-augmented Transformer for Speech Recognition`](https://arxiv.org/pdf/2005.08100)
 
