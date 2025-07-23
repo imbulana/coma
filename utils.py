@@ -334,5 +334,7 @@ def validate_composition(
 
     writer.add_scalar('val/composition/epoch_accuracy_majority', epoch_acc_majority, epoch)
     writer.add_scalar('val/composition/epoch_f1_majority', epoch_f1_majority, epoch)
+    writer.add_scalar('val/composition/epoch_accuracy_confidence_vote', epoch_acc_confidence_vote, epoch)
+    writer.add_scalar('val/composition/epoch_f1_confidence_vote', epoch_f1_confidence_vote, epoch)
     
     return epoch_acc_majority, epoch_f1_majority, epoch_acc_confidence_vote, epoch_f1_confidence_vote
