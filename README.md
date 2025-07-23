@@ -86,7 +86,7 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, <10 
 |--------------------------------------|---------------------------------|--------------------------------|----------|----------|
 | 3 [(config)](/configs/K=3.json)      | 0.98                            | 0.98                           | 0.84     | 406,948  |
 | 5 [(config)](/configs/K=5.json)      | 0.95                            | 0.92                           | 0.82     | 406,372  |
-| 10 [(config)](/configs/K=10.json) IP | 0.89                            | 0.84                           | 0.67     | 407,812  | 
+| 10 [(config)](/configs/K=10.json)    | 0.89                            | 0.84                           | 0.67     | 407,812  | 
 
 ## Related Works
 
