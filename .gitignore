@@ -5,10 +5,14 @@ __pycache__/
 TODO.md
 
 data/
-runs/
 logs/
+configs/*.txt
+archive/
+refs/
 
 *.pdf
 *.pt
 *.ipynb
 tokenizer.json
+
+_transformer.py
