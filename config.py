@@ -1,10 +1,11 @@
+import torch
 from pathlib import Path
 from datetime import datetime
 
 SEED = 42
 DEVICE = (
-    'cuda' if __import__('torch').cuda.is_available() else
-    'mps' if __import__('torch').backends.mps.is_available() else
+    'cuda' if torch.cuda.is_available() else
+    'mps' if torch.backends.mps.is_available() else
     'cpu'
 )
 
@@ -19,7 +20,7 @@ SPLIT_DATA = True
 SHUFFLE = True
 SORT_BY = 'compositions' # must be in ['compositions', 'duration']
 TEST_SIZE = 0.2
-TOP_K_COMPOSERS = 3 # select top K composers by SORT_BY type to train/test on
+TOP_K_COMPOSERS = 10 # select top K composers by SORT_BY type to train/test on
 TO_SKIP = [] # composers to skip
 AUGMENT_DATA = False
 
@@ -55,11 +56,12 @@ DEPTH = 1
 DIM_HEAD = 2
 HEADS = 2
 FF_MULT = 2
+MAX_SEQ_LEN = 1024
 
 ATTN_WINDOW_SIZES = [8, 64]
 
 CONV_EXPANSION_FACTOR = 2
-CONV_KERNEL_SIZE = 8
+CONV_KERNEL_SIZE = 4
 
 ATTN_DROPOUT = 0.1
 FF_DROPOUT = 0.1
@@ -68,16 +70,17 @@ CONV_DROPOUT = 0.1
 PRENORM = True
 QK_SCALE = 2
 
+# pooling strategy for sequence-level classification
+POOLING_STRATEGY = "sequence_attention"  # must be in ["sequence_attention", "mean", "max", "first"]
+
 # training
 
-NUM_EPOCHS = 15
+NUM_EPOCHS = 20
 BATCH_SIZE = 8
 
 LEARNING_RATE = 2e-4
 LR_SCHEDULER = "MultiStepLR" # must be in ["CosineAnnealingLR", "MultiStepLR", None])
-MILESTONES = [NUM_EPOCHS//4, NUM_EPOCHS*2//4, NUM_EPOCHS*3//4] # for MultiStepLR
+MILESTONES = [NUM_EPOCHS//5, NUM_EPOCHS*2//5, NUM_EPOCHS*3//5] # for MultiStepLR
 WEIGHT_DECAY = 2e-4
-
-MAX_SEQ_LEN = 1024
 
 LOG_DIR = Path("logs") / datetime.now().strftime("%Y%m%d_%H%M%S") # tensorboard log directory

@@ -218,6 +218,7 @@ model = Transformer(
     num_classes=len(composers),
     prenorm=PRENORM,
     qk_scale=QK_SCALE,
+    pooling_strategy=POOLING_STRATEGY
 ).to(DEVICE)
 
 print(f"\nmodel size: {sum(p.numel() for p in model.parameters()):,}\n")

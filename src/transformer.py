@@ -451,12 +451,17 @@ class Transformer(nn.Module):
         prenorm = True,
         qk_scale = 8,
         padding_idx = 0,
+        pooling_strategy = "sequence_attention",
     ):
         super().__init__()
         self.dim = dim
         self.max_seq_len = max_seq_len
         self.token_emb = nn.Embedding(vocab_size, dim, padding_idx=padding_idx)
         self.pos_emb = ScaledSinusoidalEmbedding(dim)
+        self.pooling_strategy = pooling_strategy
+        
+        if self.pooling_strategy == "first":
+            self.cls_token = nn.Parameter(torch.randn(1, 1, dim))
 
         self.layers = nn.ModuleList([])
         for _ in range(depth):
@@ -485,7 +490,19 @@ class Transformer(nn.Module):
         )
 
     def forward(self, x, mask=None, pad=True, return_encoding=False):
+        batch_size = x.shape[0]
+
         x = self.token_emb(x)
+        
+        # add CLS token if using first-token pooling
+        if self.pooling_strategy == "first":
+            cls_tokens = self.cls_token.expand(batch_size, -1, -1)
+            x = torch.cat((cls_tokens, x), dim=1)
+            
+            if exists(mask):
+                cls_mask = torch.ones(batch_size, 1, dtype=mask.dtype, device=mask.device)
+                mask = torch.cat([cls_mask, mask], dim=1)
+        
         x = self.pos_emb(x, mask=mask)
 
         # encoder layers
@@ -493,14 +510,33 @@ class Transformer(nn.Module):
         for block in self.layers:
             x = block(x, mask=mask)
 
-        # sequence attention and classification
+        # pooling and classification
         
-        attn_logits = self.sequence_attention(x)
-        if exists(mask):
-            attn_logits = attn_logits.masked_fill(~mask.unsqueeze(-1), float('-inf'))
-        
-        attn_weights = torch.softmax(attn_logits, dim=1)
-        x = torch.sum(x * attn_weights, dim=1)
+        if self.pooling_strategy == "sequence_attention":
+            attn_logits = self.sequence_attention(x)
+            if exists(mask):
+                attn_logits = attn_logits.masked_fill(~mask.unsqueeze(-1), float('-inf'))
+            attn_weights = torch.softmax(attn_logits, dim=1)
+            x = torch.sum(x * attn_weights, dim=1)
+
+        elif self.pooling_strategy == "mean":
+            if exists(mask):
+                x = x.masked_fill(~mask.unsqueeze(-1), 0.)
+                x = x.sum(dim=1) / mask.sum(dim=1, keepdim=True)
+            else:
+                x = x.mean(dim=1)
+
+        elif self.pooling_strategy == "max":
+            if exists(mask):
+                x = x.masked_fill(~mask.unsqueeze(-1), float('-inf'))
+            x = x.max(dim=1)[0]
+
+        elif self.pooling_strategy == "first":
+            x = x[:, 0]
+
+        else:
+            raise ValueError(f"unknown pooling strategy: {self.pooling_strategy}")
+            
         logits = self.classifier(x)
 
         if return_encoding:
@@ -510,9 +546,9 @@ class Transformer(nn.Module):
 
 
 if __name__ == "__main__":
-    vocab_size = 30000
+    vocab_size = 512
     batch_size = 2
-    num_classes = 15
+    num_classes = 10
 
     model = Transformer(
         dim = 128,
