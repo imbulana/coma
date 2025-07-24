@@ -100,12 +100,9 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, <10 
 
 [`Automated Thematic Composer Classification Using Segment Retrieval (2024)`](https://doi.org/10.1109/MIPR62202.2024.00032)
 
-The following work achieves perfect acc/f1. Based on their code release, it appears that there is likely data leakage. 
-Will verify ltr : ) 
+The following work achieves perfect acc/f1. Looking at their [code](https://github.com/SirawitC/NLP-based-music-processing-for-composer-classification), it appears that there is data leakage b/w the train and test sets. Their dataset (on which they do a random train/test split) for the 5 composer classification task has at most 482 unique compositions but 809 total compositions.
 
 [`NLP-based music processing for composer classification (2023)`](https://doi.org/10.1038/s41598-023-40332-0)
-
-code: https://github.com/SirawitC/NLP-based-music-processing-for-composer-classification
 
 ## References
 
@@ -117,44 +114,8 @@ conformer: https://github.com/jreremy/conformer, https://github.com/lucidrains/c
 
 miditok: https://github.com/Natooz/MidiTok
 
-## Citations
+[^1]: Gulati, A., Qin, J., Chiu, C., Parmar, N., Zhang, Y., Yu, J., Han, W., Wang, S., Zhang, Z., Wu, Y., & Pang, R. (2020). Conformer: Convolution-augmented Transformer for Speech Recognition. [ArXiv, abs/2005.08100.](https://arxiv.org/abs/2005.08100)
 
-```bibtex
-@misc{
-    gulati2020conformer,
-    title   = {Conformer: Convolution-augmented Transformer for Speech Recognition},
-    author  = {Anmol Gulati and James Qin and Chung-Cheng Chiu and Niki Parmar and Yu Zhang and Jiahui Yu and Wei Han and Shibo Wang and Zhengdong Zhang and Yonghui Wu and Ruoming Pang},
-    year    = {2020},
-    eprint  = {2005.08100},
-    archivePrefix = {arXiv},
-    primaryClass = {eess.AS}
-}
-```
+[^2]: Cui XH, Hu P, Huang Z. Music sequence generation and arrangement based on transformer model. Journal of Computational Methods in Sciences and Engineering. 2025;0(0). [doi:10.1177/14727978251337904.](doi:10.1177/14727978251337904)
 
-```bibtex
-@article{
-    Cui_Hu_Huang_2025, 
-    title={Music sequence generation and arrangement based on Transformer model}, 
-    author={Cui, Xiao Hong and Hu, Pan and Huang, Zheng}, 
-    journal={Journal of Computational Methods in Sciences and Engineering}, 
-    year={2025}
-    DOI={10.1177/14727978251337904}, 
-} 
-```
-
-```bibtex
-@inproceedings{
-  hawthorne2018enabling,
-  title={Enabling Factorized Piano Music Modeling and Generation with the {MAESTRO} Dataset},
-  author={Curtis Hawthorne and Andriy Stasyuk and Adam Roberts and Ian Simon and Cheng-Zhi Anna Huang and Sander Dieleman and Erich Elsen and Jesse Engel and Douglas Eck},
-  booktitle={International Conference on Learning Representations},
-  year={2019},
-  url={https://openreview.net/forum?id=r1lYRjC9F7},
-}
-```
-
-[^1]: [`Conformer: Convolution-augmented Transformer for Speech Recognition`](https://arxiv.org/pdf/2005.08100)
-
-[^2]: [`Music sequence generation and arrangement based on transformer model`](https://doi.org/10.1177/14727978251337904)
-
-[^3]: [`The MAESTRO Dataset`](https://magenta.tensorflow.org/datasets/maestro)
+[^3]: Hawthorne, C., Stasyuk, A., Roberts, A., Simon, I., Huang, C.A., Dieleman, S., Elsen, E., Engel, J., & Eck, D. (2018). Enabling Factorized Piano Music Modeling and Generation with the MAESTRO Dataset. [ArXiv, abs/1810.12247.](https://arxiv.org/abs/1810.12247)
