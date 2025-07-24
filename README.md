@@ -116,6 +116,6 @@ miditok: https://github.com/Natooz/MidiTok
 
 [^1]: Gulati, A., Qin, J., Chiu, C., Parmar, N., Zhang, Y., Yu, J., Han, W., Wang, S., Zhang, Z., Wu, Y., & Pang, R. (2020). Conformer: Convolution-augmented Transformer for Speech Recognition. [ArXiv, abs/2005.08100.](https://arxiv.org/abs/2005.08100)
 
-[^2]: Cui XH, Hu P, Huang Z. Music sequence generation and arrangement based on transformer model. Journal of Computational Methods in Sciences and Engineering. 2025;0(0). [doi:10.1177/14727978251337904.](doi:10.1177/14727978251337904)
+[^2]: Cui XH, Hu P, Huang Z. Music sequence generation and arrangement based on transformer model. Journal of Computational Methods in Sciences and Engineering. 2025;0(0). [doi:10.1177/14727978251337904.](https://doi.org/10.1177/14727978251337904)
 
 [^3]: Hawthorne, C., Stasyuk, A., Roberts, A., Simon, I., Huang, C.A., Dieleman, S., Elsen, E., Engel, J., & Eck, D. (2018). Enabling Factorized Piano Music Modeling and Generation with the MAESTRO Dataset. [ArXiv, abs/1810.12247.](https://arxiv.org/abs/1810.12247)
