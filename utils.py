@@ -91,6 +91,7 @@ def save_config(writer):
             "CONV_DROPOUT": CONV_DROPOUT,
             "PRENORM": PRENORM,
             "QK_SCALE": QK_SCALE,
+            "POOLING_STRATEGY": POOLING_STRATEGY,
         }
     }
     writer.add_text("config", json.dumps(config_dict, indent=2))
