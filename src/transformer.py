@@ -482,11 +482,10 @@ class Transformer(nn.Module):
         self.sequence_attention = nn.Linear(dim, 1, bias=True)
         self.classifier = nn.Sequential(
             nn.LayerNorm(dim),
-            nn.Dropout(ff_dropout),
             nn.Linear(dim, dim * 2, bias=False),
             nn.GELU(),
             nn.Dropout(ff_dropout),
-            nn.Linear(dim * 2, num_classes, bias=False)
+            nn.Linear(dim * 2, num_classes, bias=True)
         )
 
     def forward(self, x, mask=None, pad=True, return_encoding=False):
