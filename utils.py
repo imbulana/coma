@@ -150,7 +150,9 @@ def plot_metrics(
         plt.show()
     plt.close()
 
-def train_epoch(model, train_loader, criterion, optimizer, device, epoch, writer, scheduler=None):
+def train_epoch(
+    model, train_loader, criterion, optimizer, device, epoch, writer, scheduler=None, max_grad_norm=1.
+):
     model.train()
     total_loss = 0
     correct = 0
@@ -169,6 +171,10 @@ def train_epoch(model, train_loader, criterion, optimizer, device, epoch, writer
         
         optimizer.zero_grad()
         loss.backward()
+        
+        if max_grad_norm is not None:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_grad_norm)
+        
         optimizer.step()
         
         with torch.no_grad():

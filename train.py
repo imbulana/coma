@@ -167,6 +167,23 @@ if AUGMENT_DATA:
     midi_paths_train = list(MAESTRO_DATA_PATH.glob(leaf("train")))
     print(f"\ntrain samples (augmentations added): {len(midi_paths_train)}")
 
+
+# NOTE: for testing only
+# split individual recordings instead of compositions 
+# note that there are multiple recordings of the same composition in the MAESTRO dataset
+_SHUFFLE_RECORDINGS = False
+if _SHUFFLE_RECORDINGS:
+    all_paths = midi_paths_train + midi_paths_valid + midi_paths_test
+    df_all = pd.DataFrame(all_paths, columns=["path"])
+    df_all['composer'] = df_all['path'].apply(lambda x: x.parent.parent.name)
+    X_train, X_test = train_test_split(
+        df_all['path'], stratify=df_all['composer'], random_state=SEED, shuffle=True
+    )
+
+    midi_paths_train = X_train.tolist()
+    midi_paths_valid = X_test.tolist()
+
+
 # create datasets and dataloaders
 
 composers = [path.name for path in (MAESTRO_DATA_PATH / "splits" / "train").glob("*/")]
@@ -243,7 +260,7 @@ for epoch in range(1, NUM_EPOCHS+1):
     print(f"\nEpoch {epoch}/{NUM_EPOCHS}")
     
     train_loss, train_acc, train_f1 = train_epoch(
-        model, train_chunk_loader, criterion, optim, DEVICE, epoch, writer, scheduler
+        model, train_chunk_loader, criterion, optim, DEVICE, epoch, writer, scheduler, max_grad_norm=MAX_GRAD_NORM
     )
 
     valid_loss, valid_acc, valid_f1 = validate_chunks(
