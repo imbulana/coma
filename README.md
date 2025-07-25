@@ -4,13 +4,13 @@ Model Architecture (see [`src/transformer.py`](src/transformer.py)):
 
 - Embedding: REMI token embedding + scaled sinusoidal positional embedding.
 
-- Encoder: Stack of conformer-like blocks[^1] (FeedForward → Multi-Scale Local Attention → Convolution → FeedForward, with LayerNorm and residuals).
-    - Attention: Multi-scale local self-attention[^2] (windowed, not full sequence). Scales aggregated via a weighted sum (learnable weight for each scale).
-    - Convolution: Depthwise 1D convolution.
+- Encoder: Stack of conformer-like blocks[^1] (FeedForward → Multi-Scale Local Attention → Convolution Module → FeedForward, with LayerNorm and residuals).
+    - Attention: Multi-scale local self-attention (windowed, not full sequence). Scales aggregated via a weighted sum (learnable weight for each scale). Inspired by the multi-scale attention mechanism in Cui et al.[^2]
+    - Convolution Module: pointwise convolution (w/ expansion factor of 2) -> GLU activation -> 1D Depthwise convolution -> Batchnorm -> Swish activation.
 
 - Sequence Attention: After encoding, a linear layer computes attention weights over the sequence, producing a weighted sum (sequence embedding).
 
-- Classifier: MLP (LayerNorm → Dropout → Linear → GELU → Dropout → Linear) to output logits for composer classes.
+- Classifier: MLP (LayerNorm → Linear → GELU → Dropout → Linear) to output logits for composer classes.
 
 ## Todo
 
@@ -50,9 +50,9 @@ There are various options for data preparation and splitting:
 
 - Select Composers: Only top K composers (by number of compositions or total duration) are selected (`TOP_K_COMPOSERS` in config).
 
-- Train/Test: For each composer, compositions are split so that no composition appears in more than one split (ensures no data leakage). If `SHUFFLE=False`, the data split provided in the `MAESTRO` dataset is used.
+- Train/Test splits: For each composer, compositions are split so that no composition appears in more than one split (ensures no data leakage).
 
-- Shuffle: Optionally shuffles before splitting (maintaining that no composition appears in more than one split). This creates a stratified split based on `TEST_SIZE` in config. For consisency with current literature it is recommeded to shuffle the dataset.
+- Shuffle (recommended): Optionally shuffles before splitting (maintaining that no composition appears in more than one split). This creates a stratified split based on `TEST_SIZE` in config. If `SHUFFLE=False`, the data split provided in the `MAESTRO` dataset is used.
 
 - Augmentation: Optionally applies pitch, velocity, and duration augmentations to training data.
 
@@ -74,7 +74,7 @@ Training Details:
 
 - Loss: Cross-entropy loss for multi-class classification.
 
-- Optimizer: AdamW. Configure learning rate and weight decay in config.
+- Optimizer: AdamW.
 
 - LR Scheduler: MultiStepLR or CosineAnnealing.
 
