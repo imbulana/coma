@@ -18,14 +18,14 @@ Model Architecture (see [`src/transformer.py`](src/transformer.py)):
 
 ## Setup
 
-1. Create a conda environment with python 3.11:
+Create a conda environment with python 3.11:
 
 ```bash
 conda create -n coma python=3.11
 conda activate coma
 ```
 
-2. Install dependencies:
+Install dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -76,6 +76,8 @@ Training Details:
 
 - Optimizer: AdamW. Configure learning rate and weight decay in config.
 
+- LR Scheduler: MultiStepLR or CosineAnnealing.
+
 - Metrics: Tracks accuracy and F1-score, both at chunk and composition level (majority voting or confidence aggregation).
 
 ## Results (wip)
@@ -99,6 +101,8 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, <10 
 [`Composer Classification with Cross-modal Transfer Learning and Musically-informed Augmentation (2021)`](https://archives.ismir.net/ismir2021/paper/000100.pdf) (zero-shot)
 
 [`Automated Thematic Composer Classification Using Segment Retrieval (2024)`](https://doi.org/10.1109/MIPR62202.2024.00032)
+
+[Concept-Based Explanations For Composer Classification](https://archives.ismir.net/ismir2022/paper/000105.pdf) (https://github.com/CPJKU/composer_concept/tree/main)
 
 The following work achieves perfect acc/f1. Looking at their [code](https://github.com/SirawitC/NLP-based-music-processing-for-composer-classification), it appears that there is data leakage b/w the train and test sets. Their dataset (on which they do a random train/test split) for the 5 composer classification task has at most 482 unique compositions but 809 total compositions.
 
