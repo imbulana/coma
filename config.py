@@ -12,15 +12,17 @@ DEVICE = (
 # data paths
 
 MAESTRO_DATA_PATH = Path("data/maestro-v3.0.0").resolve()
-MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
+# MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
+MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0_standardized.csv"
 
 # data splitting
 
-SPLIT_DATA = True
+SPLIT_DATA = False
+MAX_SEQ_LEN = 1024
 SHUFFLE = True
 SORT_BY = 'compositions' # must be in ['compositions', 'duration']
 TEST_SIZE = 0.2
-TOP_K_COMPOSERS = 10 # select top K composers by SORT_BY type to train/test on
+TOP_K_COMPOSERS = 3 # select top K composers by SORT_BY type to train/test on
 TO_SKIP = [] # composers to skip
 AUGMENT_DATA = False
 
@@ -56,12 +58,11 @@ DEPTH = 1
 DIM_HEAD = 2
 HEADS = 2
 FF_MULT = 2
-MAX_SEQ_LEN = 1024
 
-ATTN_WINDOW_SIZES = [8, 64]
+ATTN_WINDOW_SIZES = [8, 32]
 
 CONV_EXPANSION_FACTOR = 2
-CONV_KERNEL_SIZE = 4
+CONV_KERNEL_SIZE = 8
 
 ATTN_DROPOUT = 0.1
 FF_DROPOUT = 0.1
@@ -80,7 +81,11 @@ BATCH_SIZE = 8
 
 LEARNING_RATE = 2e-4
 LR_SCHEDULER = "MultiStepLR" # must be in ["CosineAnnealingLR", "MultiStepLR", None])
-MILESTONES = [NUM_EPOCHS//5, NUM_EPOCHS*2//5, NUM_EPOCHS*3//5] # for MultiStepLR
+MILESTONES = [NUM_EPOCHS//4, NUM_EPOCHS*2//4, NUM_EPOCHS*3//4] # for MultiStepLR
 WEIGHT_DECAY = 2e-4
 
-LOG_DIR = Path("logs") / datetime.now().strftime("%Y%m%d_%H%M%S") # tensorboard log directory
+MAX_GRAD_NORM = 1.  # for gradient clipping, set to None to disable
+
+# tensorboard log directory
+datetime_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+LOG_DIR = Path("logs") / f"k={TOP_K_COMPOSERS}_{datetime_str}"
