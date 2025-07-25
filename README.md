@@ -92,7 +92,7 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, <10 
 
 ## Related Works
 
-[`Deep Composer Classification Using Symbolic Representation (2020)`](https://arxiv.org/pdf/2010.00823)
+[`Deep Composer Classification Using Symbolic Representation (2020)`](https://arxiv.org/pdf/2010.00823)[(code)](https://github.com/KimSSung/Deep-Composer-Classification)
 
 [`Visual-based Musical Data Representation for Composer Classification (2022)`](https://doi.org/10.1109/iSAI-NLP56921.2022.9960254)
 
@@ -102,7 +102,7 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, <10 
 
 [`Automated Thematic Composer Classification Using Segment Retrieval (2024)`](https://doi.org/10.1109/MIPR62202.2024.00032)
 
-[Concept-Based Explanations For Composer Classification](https://archives.ismir.net/ismir2022/paper/000105.pdf) (https://github.com/CPJKU/composer_concept/tree/main)
+[`Concept-Based Explanations For Composer Classification (2022)`](https://archives.ismir.net/ismir2022/paper/000105.pdf)[(code)](https://github.com/CPJKU/composer_concept/tree/main)
 
 The following work achieves perfect acc/f1. Looking at their [code](https://github.com/SirawitC/NLP-based-music-processing-for-composer-classification), it appears that there is data leakage b/w the train and test sets. Their dataset (on which they do a random train/test split) for the 5 composer classification task has at most 482 unique compositions but 809 total compositions.
 
