@@ -92,6 +92,13 @@ if SPLIT_DATA:
 
             print(f"{composer}:")
             print(f"titles_train: {len(titles_train)}, titles_test: {len(titles_test)}\n")
+            assert set(titles_train) & set(titles_test) == set(), 'overlapping titles b/w train and test'
+
+        # save new split summary
+
+        split_summary = plot_data_split(df, LOG_DIR)
+        print("\nnew split summary:\n")
+        print(split_summary)
 
     # train tokenizer
 
@@ -102,7 +109,7 @@ if SPLIT_DATA:
             lambda x: str(MAESTRO_DATA_PATH / x)
         ).tolist()
 
-        # train the tokenizer with Byte Pair Encoding (BPE) to build the vocabulary
+        # train the tokenizer with Byte Pair Encoding to build the vocabulary
 
         tokenizer.train(
             vocab_size=VOCAB_SIZE,
@@ -120,7 +127,6 @@ if SPLIT_DATA:
 
     print("\ncreating new split...\n")
 
-
     failures = []
     for split, df_split in df.groupby("split"):
         split_path = split_parent_path / split
@@ -133,8 +139,9 @@ if SPLIT_DATA:
             midi_file_paths = df_composer["midi_filename"].apply(
                 lambda x: MAESTRO_DATA_PATH / x
             ).tolist()
-            try:
-                for midi_file_path in midi_file_paths:
+            
+            for midi_file_path in midi_file_paths:
+                try:
                     split_files_for_training(
                         files_paths=[midi_file_path],
                         tokenizer=tokenizer,
@@ -142,8 +149,9 @@ if SPLIT_DATA:
                         max_seq_len=MAX_SEQ_LEN,
                         num_overlap_bars=2,
                     )
-            except FileNotFoundError:
-                failures.append(midi_file_path)
+                except FileNotFoundError:
+                    failures.append(midi_file_path)
+                    continue
 
     if failures:
         print(f"\nfailed to split {len(failures)} files")
@@ -239,6 +247,7 @@ model = Transformer(
 ).to(DEVICE)
 
 print(f"\nmodel size: {sum(p.numel() for p in model.parameters()):,}\n")
+print(model)
 
 # optimizer, loss, and lr scheduler
 

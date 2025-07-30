@@ -19,6 +19,78 @@ def group_by_composition(midi_paths, get_title_fn=lambda x: x.parent.name):
     df['composition'] = df['path'].apply(get_title_fn)
     return df.groupby('composition')['path'].apply(list).tolist()
 
+def plot_data_split(df, log_dir):
+    split_counts = []
+    
+    for composer, df_composer in df.groupby('canonical_composer'):
+        train_count = len(df_composer[df_composer['split'] == 'train']['canonical_title'].unique())
+        test_count = len(df_composer[df_composer['split'] == 'validation']['canonical_title'].unique())
+        
+        split_counts.append({
+            'composer': composer,
+            'train': train_count,
+            'test': test_count,
+            'total': train_count + test_count
+        })
+    
+    splits_df = pd.DataFrame(split_counts)
+    splits_df = splits_df.sort_values('total', ascending=False)
+    
+    _, ax = plt.subplots(figsize=(14, 8))
+    x = range(len(splits_df))
+    width = 0.6
+    
+    # plot stacked bars
+
+    _ = ax.bar(
+        x, splits_df['train'], width, label='train', alpha=0.8, color='steelblue'
+    )
+    _ = ax.bar(
+        x, splits_df['test'], width, bottom=splits_df['train'], label='test', alpha=0.8, color='orange'
+    )
+    
+    ax.set_xlabel('Composer', fontsize=12)
+    ax.set_ylabel('Number of Compositions', fontsize=12)
+    ax.set_title('Train/Test Split Counts per Composer', fontsize=14)
+    ax.set_xticks(x)
+    ax.set_xticklabels(splits_df['composer'], rotation=45, ha='right')
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    # set value labels
+
+    for i, (train_count, test_count) in enumerate(zip(splits_df['train'], splits_df['test'])):
+        if train_count > 0:
+            ax.text(
+                i, train_count/2, 
+                f'{int(train_count)}',
+                ha='center', 
+                va='center', 
+                fontsize=9,
+                fontweight='bold'
+            )
+        if test_count > 0:
+            ax.text(
+                i, 
+                train_count + test_count/2, 
+                f'{int(test_count)}', 
+                ha='center',
+                va='center',
+                fontsize=9,
+                fontweight='bold'
+            )
+    
+    plt.tight_layout()
+    
+    # save plot
+
+    output_path = log_dir / 'data_split.png'
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"plot saved to: {output_path}")
+
+    # plt.show()
+    return splits_df
+
 class CompositionDataset(Dataset):
     def __init__(self, midi_paths_grouped, **kwargs):
         super().__init__()
