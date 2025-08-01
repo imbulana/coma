@@ -97,7 +97,7 @@ if SPLIT_DATA:
         # save new split summary
 
         split_summary = plot_data_split(df, LOG_DIR)
-        print("\nnew split summary:\n")
+        print("\n# compositions per composer:\n")
         print(split_summary)
 
     # train tokenizer
@@ -171,6 +171,11 @@ if AUGMENT_DATA:
         velocity_offsets=[-4, 4],
         duration_offsets=[-0.5, 0.5],
     )
+
+    # augments = list(set(MAESTRO_DATA_PATH.glob(leaf("train"))) - set(midi_paths_train))
+
+    # df_augments = pd.DataFrame(augments, columns=["path"])
+    # df_augments['composer'] = df_augments['path'].apply(lambda x: x.parent.parent.name)
 
     midi_paths_train = list(MAESTRO_DATA_PATH.glob(leaf("train")))
     print(f"\ntrain samples (augmentations added): {len(midi_paths_train)}")
@@ -260,7 +265,14 @@ if LR_SCHEDULER is not None:
     elif LR_SCHEDULER == "MultiStepLR":
         scheduler = MultiStepLR(optim, milestones=MILESTONES, gamma=0.1)
 
-criterion = nn.CrossEntropyLoss()
+# loss function
+
+if USE_FOCAL_LOSS:
+    criterion = FocalLoss(alpha=FOCAL_ALPHA, gamma=FOCAL_GAMMA)
+    print(f"\nusing focal loss (alpha={FOCAL_ALPHA}, gamma={FOCAL_GAMMA})")
+else:
+    criterion = nn.CrossEntropyLoss()
+    print("\nusing cross entropy loss")
 
 # training
 

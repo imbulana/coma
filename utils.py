@@ -3,6 +3,8 @@ import pandas as pd
 from tqdm import tqdm
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from miditok.pytorch_data import DatasetMIDI
 
@@ -51,7 +53,7 @@ def plot_data_split(df, log_dir):
     
     ax.set_xlabel('Composer', fontsize=12)
     ax.set_ylabel('Number of Compositions', fontsize=12)
-    ax.set_title('Train/Test Split Counts per Composer', fontsize=14)
+    ax.set_title('Compositions per Composer (train/test split)', fontsize=14)
     ax.set_xticks(x)
     ax.set_xticklabels(splits_df['composer'], rotation=45, ha='right')
     ax.legend()
@@ -128,20 +130,43 @@ class CompositionDataLoader:
 
 # train & eval utils
 
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=2., gamma=3., reduction='mean'):
+        super().__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.reduction = reduction
+    
+    def forward(self, inputs, targets):
+        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
+        pt = torch.exp(-ce_loss)
+        focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
+        
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:
+            return focal_loss
+
 def save_config(writer):
     config_dict = {
         "SEED": SEED,
         "DEVICE": str(DEVICE),
+
         "SPLIT_DATA": SPLIT_DATA,
         "SHUFFLE": SHUFFLE,
         "TEST_SIZE": TEST_SIZE,
         "TOP_K_COMPOSERS": TOP_K_COMPOSERS,
         "TO_SKIP": TO_SKIP,
         "AUGMENT_DATA": AUGMENT_DATA,
+
         "TRAIN_TOKENIZER": TRAIN_TOKENIZER,
         "VOCAB_SIZE": VOCAB_SIZE,
+
         "BEAT_RES": str(BEAT_RES),
         "TOKENIZER_PARAMS": {k: str(v) for k, v in TOKENIZER_PARAMS.items()},
+
         "NUM_EPOCHS": NUM_EPOCHS,
         "BATCH_SIZE": BATCH_SIZE,
         "LEARNING_RATE": LEARNING_RATE,
@@ -149,6 +174,12 @@ def save_config(writer):
         "LR_SCHEDULER": LR_SCHEDULER,
         "MILESTONES": MILESTONES,
         "MAX_SEQ_LEN": MAX_SEQ_LEN,
+        "MAX_GRAD_NORM": MAX_GRAD_NORM,
+
+        "USE_FOCAL_LOSS": USE_FOCAL_LOSS,
+        "FOCAL_ALPHA": FOCAL_ALPHA,
+        "FOCAL_GAMMA": FOCAL_GAMMA,
+
         "MODEL_PARAMS": {
             "DIM": DIM,
             "DEPTH": DEPTH,
@@ -223,7 +254,7 @@ def plot_metrics(
     plt.close()
 
 def train_epoch(
-    model, train_loader, criterion, optimizer, device, epoch, writer, scheduler=None, max_grad_norm=1.
+    model, train_loader, criterion, optimizer, device, epoch, writer, scheduler=None, max_grad_norm=None
 ):
     model.train()
     total_loss = 0
