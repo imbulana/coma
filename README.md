@@ -82,13 +82,13 @@ Training Details:
 
 ## Results (wip)
 
-Preliminary results (top K by number of compositions, 80:20 shuffled split, <10 epochs):
+Preliminary results (top K by number of compositions, 80:20 shuffled split, 20 epochs):
 
 | # composers                          | Composition F1 (Confidence Agg) | Composition F1 (Majority Vote) | Chunk F1 | # params |
 |--------------------------------------|---------------------------------|--------------------------------|----------|----------|
 | 3 [(config)](/configs/K=3.json)      | 0.98                            | 0.98                           | 0.84     | 406,948  |
-| 5 [(config)](/configs/K=5.json)      | 0.95                            | 0.92                           | 0.82     | 406,372  |
-| 10 [(config)](/configs/K=10.json)    | 0.89                            | 0.84                           | 0.67     | 407,812  | 
+| 5 [(config)](/configs/K=5.json)      | 0.97                            | 0.97                           | 0.86     | 402,921  |
+| 10 [(config)](/configs/K=10.json)    | 0.90                            | 0.89                           | 0.69     | 407,812  | 
 
 ## Related Works
 
