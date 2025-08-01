@@ -88,7 +88,7 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, 20 e
 |--------------------------------------|---------------------------------|--------------------------------|----------|----------|
 | 3 [(config)](/configs/K=3.json)      | 0.98                            | 0.98                           | 0.84     | 406,948  |
 | 5 [(config)](/configs/K=5.json)      | 0.97                            | 0.97                           | 0.86     | 402,921  |
-| 10 [(config)](/configs/K=10.json)    | 0.90                            | 0.89                           | 0.69     | 407,812  | 
+| 10 [(config)](/configs/K=10.json)    | 0.90                            | 0.89                           | 0.69     | 407,822  | 
 
 ## Related Works
 
