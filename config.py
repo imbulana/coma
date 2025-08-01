@@ -12,18 +12,18 @@ DEVICE = (
 # data paths
 
 MAESTRO_DATA_PATH = Path("data/maestro-v3.0.0").resolve()
-# MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
-MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0_standardized.csv"
+MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
+# MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0_standardized.csv"
 
 # data splitting
 
-SPLIT_DATA = False
+SPLIT_DATA = True
 MAX_SEQ_LEN = 1024
 SHUFFLE = True
 SORT_BY = 'compositions' # must be in ['compositions', 'duration']
 TEST_SIZE = 0.2
-TOP_K_COMPOSERS = 3 # select top K composers by SORT_BY type to train/test on
-TO_SKIP = [] # composers to skip
+TOP_K_COMPOSERS = 13 # select top K composers by SORT_BY type to train/test on
+TO_SKIP = ['Frédéric Chopin', 'Franz Schubert', 'Ludwig van Beethoven', 'Johann Sebastian Bach', 'Franz Liszt'] # composers to skip
 AUGMENT_DATA = False
 
 # tokenizer
@@ -33,7 +33,6 @@ TOKENIZER_LOAD_PATH = Path("tokenizer.json").resolve() # pretrained tokenizer pa
 
 TRAIN_TOKENIZER = False # whether to train the tokenizer to a target vocab size with byte pair encoding
 VOCAB_SIZE = 512 # target vocab size for tokenizer training
-
 TOKENIZER_SAVE_PATH = Path("tokenizer.json").resolve()
 
 BEAT_RES = {(0, 1): 12, (1, 2): 4, (2, 4): 2, (4, 8): 1}
@@ -57,19 +56,19 @@ DIM = 144
 DEPTH = 1
 DIM_HEAD = 2
 HEADS = 2
+QK_SCALE = 2
 FF_MULT = 2
 
-ATTN_WINDOW_SIZES = [8, 32]
+ATTN_WINDOW_SIZES = [32, 64]
 
 CONV_EXPANSION_FACTOR = 2
-CONV_KERNEL_SIZE = 8
+CONV_KERNEL_SIZE = 4
 
 ATTN_DROPOUT = 0.1
 FF_DROPOUT = 0.1
 CONV_DROPOUT = 0.1
 
 PRENORM = True
-QK_SCALE = 2
 
 # pooling strategy for sequence-level classification
 POOLING_STRATEGY = "sequence_attention"  # must be in ["sequence_attention", "mean", "max", "first"]
@@ -79,12 +78,18 @@ POOLING_STRATEGY = "sequence_attention"  # must be in ["sequence_attention", "me
 NUM_EPOCHS = 20
 BATCH_SIZE = 8
 
-LEARNING_RATE = 2e-4
-LR_SCHEDULER = "MultiStepLR" # must be in ["CosineAnnealingLR", "MultiStepLR", None])
-MILESTONES = [NUM_EPOCHS//4, NUM_EPOCHS*2//4, NUM_EPOCHS*3//4] # for MultiStepLR
-WEIGHT_DECAY = 2e-4
+LEARNING_RATE = 4e-4
+LR_SCHEDULER = None # must be in ["CosineAnnealingLR", "MultiStepLR", None]
+MILESTONES = [12] # for MultiStepLR
+WEIGHT_DECAY = 4e-4
 
-MAX_GRAD_NORM = 1.  # for gradient clipping, set to None to disable
+MAX_GRAD_NORM = None # for gradient clipping, set to None to disable
+
+# focal loss (set to False to use CE loss)
+
+USE_FOCAL_LOSS = False
+FOCAL_ALPHA = 2.0  # weighting factor for rare class
+FOCAL_GAMMA = 3.0  # focusing parameter
 
 # tensorboard log directory
 datetime_str = datetime.now().strftime("%Y%m%d_%H%M%S")

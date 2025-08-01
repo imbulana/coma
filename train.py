@@ -69,11 +69,12 @@ if SPLIT_DATA:
     else:
         raise ValueError(f"Invalid sort_by: {SORT_BY}. Must be 'compositions' or 'duration'.")
 
-    df = df[df['canonical_composer'].isin(top_k_composers)]
-
-    print(f"\nselected {len(top_k_composers)} composers: {top_k_composers.tolist()}\n")
     if TO_SKIP:
         print(f"\nskipping composers: {TO_SKIP}\n")
+        top_k_composers = top_k_composers[~top_k_composers.isin(TO_SKIP)]
+
+    df = df[df['canonical_composer'].isin(top_k_composers)]
+    print(f"\nselected {len(top_k_composers)} composers: {top_k_composers.tolist()}\n")
 
     # shuffle data (ensure that no composition is shared b/w train and valid)
 
@@ -132,8 +133,8 @@ if SPLIT_DATA:
         split_path = split_parent_path / split
 
         for composer, df_composer in df_split.groupby("canonical_composer"):
-            if any(skip_composer in str(composer) for skip_composer in TO_SKIP):
-                continue
+            # if any(skip_composer in str(composer) for skip_composer in TO_SKIP):
+            #     continue
 
             composer_path = split_path / composer
             midi_file_paths = df_composer["midi_filename"].apply(
