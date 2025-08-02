@@ -84,11 +84,12 @@ Training Details:
 
 Preliminary results (top K by number of compositions, 80:20 shuffled split, 20 epochs):
 
-| # composers                          | Composition F1 (Confidence Agg) | Composition F1 (Majority Vote) | Chunk F1 | # params |
-|--------------------------------------|---------------------------------|--------------------------------|----------|----------|
-| 3 [(config)](/configs/K=3.json)      | 0.98                            | 0.98                           | 0.84     | 406,948  |
-| 5 [(config)](/configs/K=5.json)      | 0.97                            | 0.97                           | 0.86     | 402,921  |
-| 10 [(config)](/configs/K=10.json)    | 0.90                            | 0.89                           | 0.69     | 407,822  | 
+| # composers                       | Composition F1 (Confidence Agg) | Composition F1 (Majority Vote) | Chunk F1 | # params |
+|-----------------------------------|---------------------------------|--------------------------------|----------|----------|
+| 3 [(config)](/configs/K=3.json)   | 0.98                            | 0.98                           | 0.84     | 406,948  |
+| 5 [(config)](/configs/K=5.json)   | 0.97                            | 0.97                           | 0.86     | 402,921  |
+| 10 [(config)](/configs/K=10.json) | 0.90                            | 0.89                           | 0.69     | 407,822  |
+| 13 [(config)](/configs/K=13.json) | 0.87                            | 0.82                           | 0.68     | 408,689  |
 
 ## Related Works
 

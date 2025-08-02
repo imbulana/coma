@@ -1,0 +1,58 @@
+[{
+  "SEED": 42,
+  "DEVICE": "mps",
+  "SPLIT_DATA": true,
+  "SHUFFLE": true,
+  "TEST_SIZE": 0.2,
+  "TOP_K_COMPOSERS": 13,
+  "TO_SKIP": [],
+  "AUGMENT_DATA": false,
+  "TRAIN_TOKENIZER": false,
+  "VOCAB_SIZE": 512,
+  "BEAT_RES": "{(0, 1): 12, (1, 2): 4, (2, 4): 2, (4, 8): 1}",
+  "TOKENIZER_PARAMS": {
+    "pitch_range": "(21, 109)",
+    "beat_res": "{(0, 1): 12, (1, 2): 4, (2, 4): 2, (4, 8): 1}",
+    "num_velocities": "24",
+    "special_tokens": "['PAD', 'BOS', 'EOS']",
+    "use_chords": "True",
+    "use_rests": "True",
+    "use_tempos": "True",
+    "use_time_signatures": "True",
+    "use_programs": "False",
+    "num_tempos": "32",
+    "tempo_range": "(50, 200)"
+  },
+  "NUM_EPOCHS": 20,
+  "BATCH_SIZE": 8,
+  "LEARNING_RATE": 0.0004,
+  "WEIGHT_DECAY": 0.0004,
+  "LR_SCHEDULER": "MultiStepLR",
+  "MILESTONES": [
+    12
+  ],
+  "MAX_SEQ_LEN": 1024,
+  "MAX_GRAD_NORM": null,
+  "USE_FOCAL_LOSS": false,
+  "FOCAL_ALPHA": 2.0,
+  "FOCAL_GAMMA": 3.0,
+  "MODEL_PARAMS": {
+    "DIM": 144,
+    "DEPTH": 1,
+    "DIM_HEAD": 2,
+    "HEADS": 2,
+    "FF_MULT": 2,
+    "ATTN_WINDOW_SIZES": [
+      32,
+      64
+    ],
+    "CONV_EXPANSION_FACTOR": 2,
+    "CONV_KERNEL_SIZE": 4,
+    "ATTN_DROPOUT": 0.1,
+    "FF_DROPOUT": 0.1,
+    "CONV_DROPOUT": 0.1,
+    "PRENORM": true,
+    "QK_SCALE": 2,
+    "POOLING_STRATEGY": "sequence_attention"
+  }
+}]

@@ -185,6 +185,7 @@ def save_config(writer):
             "DEPTH": DEPTH,
             "DIM_HEAD": DIM_HEAD,
             "HEADS": HEADS,
+            "QK_SCALE": QK_SCALE,
             "FF_MULT": FF_MULT,
             "ATTN_WINDOW_SIZES": ATTN_WINDOW_SIZES,
             "CONV_EXPANSION_FACTOR": CONV_EXPANSION_FACTOR,
@@ -193,8 +194,7 @@ def save_config(writer):
             "FF_DROPOUT": FF_DROPOUT,
             "CONV_DROPOUT": CONV_DROPOUT,
             "PRENORM": PRENORM,
-            "QK_SCALE": QK_SCALE,
-            "POOLING_STRATEGY": POOLING_STRATEGY,
+            "POOLING_STRATEGY": POOLING_STRATEGY
         }
     }
     writer.add_text("config", json.dumps(config_dict, indent=2))

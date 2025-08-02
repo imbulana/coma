@@ -18,12 +18,13 @@ MAESTRO_CSV = MAESTRO_DATA_PATH / "maestro-v3.0.0.csv"
 # data splitting
 
 SPLIT_DATA = True
-MAX_SEQ_LEN = 1024
+MAX_SEQ_LEN = 2048
 SHUFFLE = True
 SORT_BY = 'compositions' # must be in ['compositions', 'duration']
 TEST_SIZE = 0.2
-TOP_K_COMPOSERS = 13 # select top K composers by SORT_BY type to train/test on
-TO_SKIP = ['Frédéric Chopin', 'Franz Schubert', 'Ludwig van Beethoven', 'Johann Sebastian Bach', 'Franz Liszt'] # composers to skip
+TOP_K_COMPOSERS = 5 # select top K composers by SORT_BY type to train/test on
+TO_SKIP = [] # composers to skip
+# TO_SKIP = ['Frédéric Chopin', 'Franz Schubert', 'Ludwig van Beethoven', 'Johann Sebastian Bach', 'Franz Liszt']
 AUGMENT_DATA = False
 
 # tokenizer
@@ -80,8 +81,8 @@ BATCH_SIZE = 8
 
 LEARNING_RATE = 4e-4
 LR_SCHEDULER = None # must be in ["CosineAnnealingLR", "MultiStepLR", None]
-MILESTONES = [12] # for MultiStepLR
-WEIGHT_DECAY = 4e-4
+MILESTONES = [12, 15] # for MultiStepLR
+WEIGHT_DECAY = 4e-4 # 4e-4
 
 MAX_GRAD_NORM = None # for gradient clipping, set to None to disable
 
