@@ -6,6 +6,7 @@ tqdm
 pandas
 seaborn
 matplotlib
+pretty_midi
 scikit-learn
 
 tensorboard
