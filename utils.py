@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 from tqdm import tqdm
+import pretty_midi
 
 import torch
 import torch.nn as nn
@@ -92,6 +93,122 @@ def plot_data_split(df, log_dir):
 
     # plt.show()
     return splits_df
+
+def analyze_split_durations(midi_paths, split_name=""):
+    durations = []
+    failed_files = []
+    
+    print(f"\nAnalyzing durations of {len(midi_paths)} MIDI files{' (' + split_name + ')' if split_name else ''}...")
+    
+    for path in tqdm(midi_paths, desc=f"Loading {split_name} MIDI files"):
+        try:
+            midi_data = pretty_midi.PrettyMIDI(str(path))
+            duration = midi_data.get_end_time()
+            durations.append(duration)
+        except Exception as e:
+            failed_files.append(str(path))
+            continue
+    
+    if failed_files:
+        print(f"Warning: Failed to load {len(failed_files)} files")
+    
+    durations = pd.Series(durations)
+    
+    # calculate summary stats
+
+    stats = {
+        'split_name': split_name,
+        'durations': durations,
+        'count': len(durations),
+        'mean': durations.mean(),
+        'median': durations.median(),
+        'std': durations.std(),
+        'min': durations.min(),
+        'max': durations.max(),
+        'q25': durations.quantile(0.25),
+        'q75': durations.quantile(0.75)
+    }
+    
+    return stats
+
+def plot_split_duration_stats(duration_stats, log_dir):
+    n_splits = len(duration_stats)
+    _, axes = plt.subplots(n_splits, 1, figsize=(15, 5 * n_splits))
+    
+    if n_splits == 1:
+        axes = [axes]
+    
+    colors = ['steelblue', 'orange', 'green', 'red', 'purple']
+    
+    for i, stats in enumerate(duration_stats):
+        ax = axes[i]
+        durations = stats['durations']
+        split_name = stats['split_name']
+        color = colors[i % len(colors)]
+        
+        # histogram
+
+        ax.hist(durations, bins=50, alpha=0.7, color=color, edgecolor='black', linewidth=0.5)
+        ax.axvline(
+            stats['mean'],
+            color='red',
+            linestyle='--',
+            linewidth=2,
+            label=f"Mean: {stats['mean']:.1f}s"
+        )
+        ax.axvline(
+            stats['median'],
+            color='darkred',
+            linestyle=':',
+            linewidth=2,
+            label=f"Median: {stats['median']:.1f}s"
+        )
+        
+        ax.set_xlabel('Duration (seconds)', fontsize=12)
+        ax.set_ylabel('Number of Files', fontsize=12)
+        ax.set_title(f'{split_name.title()} Split - Duration Distribution', fontsize=14)
+        ax.legend(loc='upper left')
+        ax.grid(True, alpha=0.3)
+        
+        # summary stats
+
+        stats_text = f"""
+            Count: {stats['count']:,}
+            Mean: {stats['mean']:.1f}s ({stats['mean']/60:.1f}m)
+            Median: {stats['median']:.1f}s ({stats['median']/60:.1f}m)
+            Std Dev: {stats['std']:.1f}s
+            Min: {stats['min']:.1f}s ({stats['min']/60:.1f}m)
+            Max: {stats['max']:.1f}s ({stats['max']/60:.1f}m)
+            Q25: {stats['q25']:.1f}s ({stats['q25']/60:.1f}m)
+            Q75: {stats['q75']:.1f}s ({stats['q75']/60:.1f}m)
+        """
+        
+        ax.text(0.98, 0.98, stats_text, transform=ax.transAxes, fontsize=10,
+                verticalalignment='top', horizontalalignment='right',
+                bbox={'boxstyle': 'round', 'facecolor': 'wheat', 'alpha': 0.8})
+    
+    plt.tight_layout()
+    
+    # save plot
+
+    output_path = log_dir / 'split_durations.png'
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    print(f"\nsplit duration stats saved to: {output_path}")
+    
+    # print summary stats
+
+    print(f"\nSplit MIDI File Duration Summary:")
+    for stats in duration_stats:
+        split_name = stats['split_name']
+        print(f"\n{split_name.upper()} SPLIT:")
+        print(f"Total Files: {stats['count']:,}")
+        print(f"Mean Duration: {stats['mean']:.1f}s ({stats['mean']/60:.1f}m)")
+        print(f"Median Duration: {stats['median']:.1f}s ({stats['median']/60:.1f}m)")
+        print(f"Std Dev: {stats['std']:.1f}s")
+        print(f"Range: {stats['min']:.1f}s - {stats['max']:.1f}s ({stats['min']/60:.1f}m - {stats['max']/60:.1f}m)")
+        print(f"Q25-Q75: {stats['q25']:.1f}s - {stats['q75']:.1f}s ({stats['q25']/60:.1f}m - {stats['q75']/60:.1f}m)")
+    
+    plt.close()
 
 class CompositionDataset(Dataset):
     def __init__(self, midi_paths_grouped, **kwargs):

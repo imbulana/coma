@@ -91,8 +91,6 @@ if SPLIT_DATA:
             df.loc[df['canonical_title'].isin(titles_train), 'split'] = 'train'
             df.loc[df['canonical_title'].isin(titles_test), 'split'] = 'validation'
 
-            print(f"{composer}:")
-            print(f"titles_train: {len(titles_train)}, titles_test: {len(titles_test)}\n")
             assert set(titles_train) & set(titles_test) == set(), 'overlapping titles b/w train and test'
 
         # save new split summary
@@ -164,6 +162,23 @@ get_composer_label = lambda dummy1, dummy2, x: x.parent.parent.name # signature 
 midi_paths_train = list(MAESTRO_DATA_PATH.glob(leaf("train")))
 midi_paths_valid = list(MAESTRO_DATA_PATH.glob(leaf("validation")))
 midi_paths_test = list(MAESTRO_DATA_PATH.glob(leaf("test")))
+
+# plot duration stats for split files
+
+if SPLIT_DATA:
+    duration_stats = []
+    if midi_paths_train:
+        train_stats = analyze_split_durations(midi_paths_train, "train")
+        duration_stats.append(train_stats)
+    if midi_paths_valid:
+        valid_stats = analyze_split_durations(midi_paths_valid, "validation")
+        duration_stats.append(valid_stats)
+    if midi_paths_test:
+        test_stats = analyze_split_durations(midi_paths_test, "test")
+        duration_stats.append(test_stats)
+
+    if duration_stats:
+        plot_split_duration_stats(duration_stats, LOG_DIR)
 
 if AUGMENT_DATA:
     augment_dataset(
