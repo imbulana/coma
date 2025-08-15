@@ -1,3 +1,5 @@
+<img src="assets/banner.png" width="600px"></img>
+
 Conformer with multi-scale local attention and *(periodic positional encoding) for composer classification.
 
 Model Architecture (see [`src/transformer.py`](src/transformer.py)):
