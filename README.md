@@ -1,6 +1,6 @@
 <img src="assets/banner.png" width="600px"></img>
 
-Conformer with multi-scale local attention and *(periodic positional encoding) for composer classification.
+Conformer with multi-scale local attention and *(periodic positional encoding) for composer classification. See [coma-gen](https://github.com/imbulana/coma-gen) for a similar architecture used for composer classification.
 
 Model Architecture (see [`src/transformer.py`](src/transformer.py)):
 
