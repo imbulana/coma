@@ -107,7 +107,7 @@ Preliminary results (top K by number of compositions, 80:20 shuffled split, 20 e
 
 [`Concept-Based Explanations For Composer Classification (2022)`](https://archives.ismir.net/ismir2022/paper/000105.pdf)[(code)](https://github.com/CPJKU/composer_concept/tree/main)
 
-The following work achieves perfect acc/f1. Looking at their [code](https://github.com/SirawitC/NLP-based-music-processing-for-composer-classification), it appears that there is data leakage b/w the train and test sets. Their dataset (on which they do a random train/test split) for the 5 composer classification task has at most 482 unique compositions but 809 total compositions.
+The following work achieves perfect acc/f1. Looking at their [code](https://github.com/SirawitC/NLP-based-music-processing-for-composer-classification), it appears that there is data leakage b/w the train and test sets. Their dataset (on which they do a random train/test split) for the 5 composer classification task has at most 482 unique compositions but 809 total recordings.
 
 [`NLP-based music processing for composer classification (2023)`](https://doi.org/10.1038/s41598-023-40332-0)
 
